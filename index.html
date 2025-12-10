@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Capital Cove: Die Wachstumsfalle</title>
+    
+    <link rel="stylesheet" href="style.css">
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+<body>
+
+    <!-- 1. 3D WORLD LAYER -->
+    <div id="canvas-container"></div>
+
+    <!-- 2. GAME HUD LAYER (Stats, Ziele, Toasts) -->
+    <!-- Initial hidden, wird nach Intro eingeblendet -->
+    <div id="ui-layer" class="hidden">
+        
+        <!-- Stats Panel (Oben Rechts) -->
+        <div id="stats-panel">
+            <div id="stat-money-container" class="stat-item" title="Verfügbares Kapital">
+                <span class="icon">💰</span>
+                <span id="stat-money">0</span>
+            </div>
+            <div id="stat-debt-container" class="stat-item" title="Schulden bei der Bank">
+                <span class="icon">🏦</span>
+                <span id="stat-debt">0</span>
+            </div>
+            <div id="stat-fish-container" class="stat-item" title="Ökologischer Zustand">
+                <span class="icon">🐟</span>
+                <span id="stat-fish">100%</span>
+            </div>
+        </div>
+
+        <!-- Objective Panel (Oben Links) -->
+        <!-- Wird dynamisch via JS befüllt -->
+        <div id="objective-panel"></div>
+
+        <!-- Crisis Cards (Schweben über Gebäuden) -->
+        <div id="crisis-cards-container"></div>
+
+        <!-- Toasts & Warnungen (Mitte Oben) -->
+        <div id="toast-message" class="hidden">
+            <span id="toast-text">Nachricht</span>
+        </div>
+        
+        <div id="persistent-warning" class="hidden">
+            <span class="warning-icon">📉</span>
+            <span id="persistent-warning-text">Warnung</span>
+        </div>
+
+        <!-- NEU: Kreislauf Erklärungs-Overlay -->
+        <div id="cycle-overlay" class="hidden">
+            <div class="cycle-paper">
+                <h2 class="cycle-title">Der Wirtschaftskreislauf</h2>
+                <div class="cycle-diagram">
+                    <svg class="cycle-lines-svg" viewBox="0 0 400 300" role="presentation" aria-hidden="true">
+                        <defs>
+                            <marker id="arrowhead-gray" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                                <polygon points="0 0, 10 3.5, 0 7" fill="#bdc3c7" />
+                            </marker>
+                            <marker id="arrowhead-dark" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                                <polygon points="0 0, 10 3.5, 0 7" fill="#2c3e50" />
+                            </marker>
+                            <marker id="arrowhead-gold" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                                <polygon points="0 0, 10 3.5, 0 7" fill="#f1c40f" />
+                            </marker>
+                        </defs>
+
+                        <path id="flow-player-tavern" class="arrow-path active" d="M 200 70 L 85 235" marker-end="url(#arrowhead-dark)" />
+                        <path id="flow-player-shipyard" class="arrow-path active" d="M 200 70 L 315 235" marker-end="url(#arrowhead-dark)" />
+                        <path id="flow-tavern-player" class="arrow-path highlight" d="M 85 235 L 200 100" marker-end="url(#arrowhead-gold)" />
+                        <path id="flow-shipyard-player" class="arrow-path highlight" d="M 315 235 L 200 100" marker-end="url(#arrowhead-gold)" />
+                    </svg>
+
+                    <div class="cycle-node node-player">
+                        <div class="node-icon">🏠</div>
+                        <div class="node-label">Kapitän</div>
+                        <div class="node-wallet" id="wallet-player">100</div>
+                    </div>
+
+                    <div class="cycle-node node-tavern">
+                        <div class="node-icon">🍺</div>
+                        <div class="node-label">Mo (Taverne)</div>
+                        <div class="node-wallet" id="wallet-mo">100</div>
+                    </div>
+
+                    <div class="cycle-node node-shipyard">
+                        <div class="node-icon">🛠️</div>
+                        <div class="node-label">Kian (Werft)</div>
+                        <div class="node-wallet" id="wallet-kian">100</div>
+                    </div>
+                </div>
+
+                <div class="cycle-text-area">
+                    <div id="cycle-text-normal" class="cycle-text-content">
+                        <p>Jede Münze, die du ausgibst, wird zum Einkommen deiner Nachbarn.</p>
+                        <p>Nur wenn sie Geld haben, können sie deinen Fisch kaufen.</p>
+                    </div>
+                    <div id="cycle-text-broken" class="cycle-text-content hidden">
+                        <p class="error-text">DU HAST DEN FLUSS GESTOPPT.</p>
+                        <p>Indem du die Ausgaben gestrichen hast, hast du deinen Kunden das Geld entzogen.</p>
+                        <p><strong>Kein Geld bei ihnen = Kein Umsatz für dich.</strong></p>
+                    </div>
+                </div>
+
+                <div class="cycle-controls">
+                    <button id="cycle-close-btn" class="btn-cycle finish">Verstanden</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tutorial Highlights (Pfeile/Rahmen) -->
+        <div id="tutorial-overlay" class="hidden">
+            <div class="dimmer"></div>
+            <div id="tutorial-tooltip" class="hidden">
+                <p id="tutorial-text">Info</p>
+                <div class="arrow"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. INTERACTIVE LAYERS -->
+
+    <!-- A. MENÜ OVERLAY (Modal für Werft/Bank/Kontor Menüs) -->
+    <!-- Dies ist für statische Menüs, nicht für Story-Dialoge -->
+    <div id="dialog-overlay" class="hidden">
+        <div class="dialog-box menu-style">
+            <button id="dialog-close-btn" aria-label="Schließen">×</button>
+            <div id="dialog-avatar">👤</div>
+            <h3 id="dialog-title">Titel</h3>
+            <p id="dialog-text">Inhalt...</p>
+            <div id="dialog-options" class="menu-grid"></div>
+        </div>
+    </div>
+
+    <!-- B. NARRATIVE SCENE (Story Dialoge - NEU!) -->
+    <!-- Ermöglicht 2 Charaktere gleichzeitig + Interaktions-Buttons -->
+    <div id="narrative-scene" class="hidden">
+        
+        <!-- Linker Charakter (z.B. Spieler/Crew) -->
+        <div id="char-slot-left" class="char-slot hidden">
+            <div id="char-img-left" class="char-img"></div>
+        </div>
+
+        <!-- Sprechblase (Mitte) -->
+        <div id="narrative-bubble-container">
+            <div class="speech-bubble">
+                <h4 id="narrative-speaker-name">Sprecher</h4>
+                <p id="narrative-text">Hier steht der Dialogtext...</p>
+                
+                <!-- Action Buttons (z.B. "Bezahlen [-30]") -->
+                <div id="narrative-actions" class="narrative-actions">
+                    <!-- Buttons werden dynamisch erzeugt -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Rechter Charakter (z.B. Kian/Mo/Sterling) -->
+        <div id="char-slot-right" class="char-slot hidden">
+            <div id="char-img-right" class="char-img"></div>
+        </div>
+
+    </div>
+
+    <!-- C. SPARBUCH OVERLAY (Spezial-UI für Phase 1) -->
+    <div id="savings-book-overlay" class="hidden">
+        <div class="savings-book clipboard">
+            <div class="savings-clip"></div>
+            <div class="savings-page">
+                <header class="savings-header">
+                    <div class="savings-title">Sparmaßnahmen</div>
+                    <div class="savings-subtitle">Wähle aus, was gestrichen wird.</div>
+                </header>
+                <div class="savings-list" id="savings-checklist">
+                    <div class="savings-item" data-value="15">
+                        <span class="savings-label">Wartungsintervalle strecken</span>
+                        <span class="savings-value">15g</span>
+                    </div>
+                    <div class="savings-item" data-value="10">
+                        <span class="savings-label">Günstigerer Proviant</span>
+                        <span class="savings-value">10g</span>
+                    </div>
+                </div>
+                <div class="savings-actions">
+                    <button id="savings-calc-btn" class="btn btn-primary" disabled>Berechnen</button>
+                    <button id="savings-confirm-btn" class="btn btn-danger" disabled>Bestätigen</button>
+                </div>
+                <div id="savings-stamp" class="savings-stamp hidden"></div>
+                <div id="savings-forecast" class="savings-forecast hidden">
+                    <h4>Prognose</h4>
+                    <p class="forecast-text success">Erwarteter Gewinn: +100 Gold</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- D. KREDITVERTRAG OVERLAY (Spezial-UI für Phase 2 - BOOM) -->
+    <div id="loan-contract-overlay" class="hidden">
+        <div class="loan-contract clipboard">
+            <div class="savings-clip"></div>
+            <div class="contract-page">
+                <header class="contract-header">
+                    <div class="contract-title">Kreditvertrag</div>
+                    <div class="contract-subtitle">Sterling's Bank für Wachstumschancen</div>
+                </header>
+
+                <div class="contract-body">
+                    <div class="contract-section">
+                        <h4>§1 Kreditbetrag</h4>
+                        <p>Der Kreditnehmer erhält <strong>200 Gold</strong> zur freien Verfügung.</p>
+                    </div>
+
+                    <div class="contract-section">
+                        <h4>§2 Zinssatz</h4>
+                        <p>Der Kredit unterliegt einem Zinssatz von <strong>10% pauschal</strong>.</p>
+                        <p class="contract-note">Dies entspricht <strong>20 Gold Zinsen</strong> bei Fälligkeit.</p>
+                    </div>
+
+                    <div class="contract-section">
+                        <h4>§3 Rückzahlungsbedingungen</h4>
+                        <p>Die Rückzahlung erfolgt <strong>flexibel</strong>, sobald der Kreditnehmer eine Liquidität von <strong>250 Gold</strong> erreicht.</p>
+                        <p class="contract-highlight">Gesamt fällig: <strong id="loan-total-due">220 Gold</strong></p>
+                    </div>
+
+                    <div class="contract-section">
+                        <h4>§4 Sicherheiten</h4>
+                        <p class="contract-warning">Bei Zahlungsunfähigkeit behält sich die Bank das Recht vor, Vermögenswerte zu pfänden.</p>
+                    </div>
+                </div>
+
+                <div class="contract-signature">
+                    <div class="signature-line">
+                        <label>Unterschrift Kreditnehmer:</label>
+                        <div class="signature-box" id="loan-signature-box">
+                            <span class="signature-placeholder">Zum Unterschreiben klicken</span>
+                            <span class="signature-text hidden" id="loan-signature-text">Kapt'n</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="contract-actions">
+                    <button id="loan-cancel-btn" class="btn btn-secondary">Ablehnen</button>
+                    <button id="loan-sign-btn" class="btn btn-primary" disabled>Unterschreiben & Kredit aufnehmen</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. CINEMATIC LAYER (Intro / Cutscenes) -->
+    <div id="cinematic-layer" class="hidden">
+        <div class="cinematic-bar top"></div>
+        <div class="cinematic-bar bottom"></div>
+
+        <div id="cinematic-card" class="hidden">
+            <div class="card-content">
+                <div id="cinematic-avatar">🌊</div>
+                <div class="text-group">
+                    <h3 id="cinematic-title">Willkommen</h3>
+                    <p id="cinematic-body">Dies ist Capital Cove...</p>
+                </div>
+            </div>
+            <button id="cinematic-next-btn">Weiter ➜</button>
+        </div>
+        <button id="skip-intro-btn" class="hidden">Intro überspringen &raquo;</button>
+    </div>
+
+    <!-- 5. COLLAPSE / GAME OVER -->
+    <div id="collapse-overlay">
+        <h1>SYSTEMKOLLAPS</h1>
+        <p>Die natürlichen Ressourcen sind erschöpft.</p>
+        <button class="btn btn-primary" onclick="location.reload()">Neustart</button>
+    </div>
+
+    <!-- 6. LOADING SCREEN -->
+    <div id="loading-screen">
+        <h1>Capital Cove</h1>
+        <p>Wirtschaftszone wird geladen...</p>
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Sterling Advisor (HUD) - außerhalb des UI-Layers -->
+    <div id="sterling-advisor" class="sterling-panel hidden">
+        <div class="sterling-avatar">🎩</div>
+        <div class="sterling-bubble">
+            <p id="sterling-text">Rationalität ist der Schlüssel.</p>
+        </div>
+    </div>
+
+    <!-- Logic Entry Point -->
+    <script type="module" src="./src/main.js"></script>
+
+</body>
+</html>

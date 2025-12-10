@@ -1,0 +1,2893 @@
+:root {
+    --color-primary: #4ecdc4;
+    --color-danger: #e74c3c;
+    --color-success: #2ecc71;
+    --color-warning: #f1c40f;
+    --color-gold: #ffd700;
+    --color-dark: #2c3e50;
+    --color-light: #ecf0f1;
+    --color-bg-ui: rgba(255, 255, 255, 0.9);
+    
+    --z-world: 0;
+    --z-ui-stats: 10;
+    --z-crisis-cards: 50;
+    --z-narrator: 150;
+    --z-narrative: 200; 
+    --z-dialog: 100;
+    --z-cinematic: 300;
+    --z-overlay: 1000;
+    --texture-paper: radial-gradient(circle at 20% 20%, rgba(255,255,255,0.9), rgba(240,235,225,0.9));
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    overflow: hidden;
+    background-color: #1a1a1a;
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    user-select: none;
+    -webkit-font-smoothing: antialiased;
+}
+
+.hidden {
+    display: none !important;
+}
+
+#canvas-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: var(--z-world);
+}
+
+#ui-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    transition: opacity 0.5s;
+    z-index: var(--z-ui-stats);
+}
+
+#stats-panel {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    gap: 20px;
+    background: var(--color-bg-ui);
+    padding: 12px 25px;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.5);
+    pointer-events: auto;
+    align-items: center;
+    transition: all 0.3s;
+    z-index: var(--z-ui-stats);
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    color: var(--color-dark);
+    font-size: 1.1rem;
+    font-variant-numeric: tabular-nums;
+    padding: 5px 10px;
+    border-radius: 8px;
+    transition: background-color 0.3s;
+}
+
+.stat-item .icon {
+    font-size: 1.4rem;
+}
+
+.stat-item .danger { color: var(--color-danger); }
+.stat-item .warning { color: var(--color-warning); }
+.stat-item .success { color: var(--color-success); }
+
+.stat-money-delta {
+    font-weight: 800;
+    font-size: 0.9rem;
+    opacity: 0;
+    transform: translateY(-4px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.stat-bar-container {
+    width: 100px;
+    height: 8px;
+    background: rgba(0,0,0,0.2);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.stat-bar-fill {
+    height: 100%;
+    background: var(--color-primary);
+    transition: width 0.5s ease-out;
+}
+
+.stat-bar-fill.danger {
+    background: var(--color-danger);
+}
+
+#phase-label {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(44, 62, 80, 0.8);
+    color: white;
+    padding: 8px 25px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    letter-spacing: 1px;
+    border: 1px solid rgba(255,255,255,0.1);
+    backdrop-filter: blur(4px);
+    pointer-events: auto;
+    text-transform: uppercase;
+    z-index: var(--z-ui-stats);
+}
+
+#objective-panel {
+    position: absolute;
+    top: 90px;
+    left: 20px;
+    background: rgba(0, 0, 0, 0.75);
+    color: white;
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 4px solid var(--color-primary);
+    backdrop-filter: blur(4px);
+    max-width: 300px;
+    pointer-events: auto;
+    transition: transform 0.3s;
+    z-index: var(--z-ui-stats);
+}
+
+#objective-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.objective-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.objective-item.done {
+    opacity: 0.5;
+    text-decoration: line-through;
+}
+
+.checkbox {
+    min-width: 16px;
+    height: 16px;
+    border: 2px solid #aaa;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 2px;
+}
+
+.checkbox.checked {
+    border-color: var(--color-success);
+    background: var(--color-success);
+}
+
+.checkbox.checked::after {
+    content: '✓';
+    font-weight: bold;
+    font-size: 12px;
+    color: white;
+}
+
+/* =========================================
+   NEU: BILLBOARD / QUITTUNGS-DESIGN
+   ========================================= */
+
+.billboard {
+    position: absolute;
+    min-width: 150px;
+    z-index: 1500;
+    background: rgba(20, 28, 38, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 6px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+    font-family: 'Courier New', monospace;
+    color: #ecf0f1;
+    text-align: right;
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.8);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.billboard.visible {
+    opacity: 1;
+    transform: translate(-50%, -120%) scale(1);
+}
+
+.billboard-header {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 700;
+    padding: 6px 10px;
+    background: rgba(0, 0, 0, 0.2);
+    color: #95a5a6;
+    text-align: left;
+}
+
+.billboard-body {
+    font-size: 0.9rem;
+    padding: 8px 10px;
+    color: #fff;
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.2);
+    white-space: nowrap;
+}
+
+.billboard-footer {
+    font-size: 1.3rem;
+    font-weight: 800;
+    padding: 8px 10px;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.billboard.gain {
+    border-left: 5px solid #2ecc71;
+}
+.billboard.gain .billboard-footer {
+    color: #2ecc71;
+}
+
+.billboard.loss {
+    border-left: 5px solid #e74c3c;
+}
+.billboard.loss .billboard-footer {
+    color: #e74c3c;
+}
+
+.billboard.neutral {
+    border-left: 5px solid #7f8c8d;
+    opacity: 0.9;
+}
+.billboard.neutral .billboard-header {
+    background: #34495e;
+    color: #ecf0f1;
+}
+.billboard.neutral .billboard-body {
+    text-decoration: line-through;
+    color: #7f8c8d;
+}
+.billboard.neutral .billboard-footer {
+    color: #95a5a6;
+}
+
+/* =========================================
+   NEU: ROTE MÜNZEN (FÜR AUSGABEN)
+   ========================================= */
+
+.flying-coin.loss {
+    background: radial-gradient(circle at 30% 30%, #e74c3c, #c0392b);
+    border-color: #922b21;
+    color: #922b21;
+    box-shadow: 0 0 12px rgba(231, 76, 60, 0.7);
+}
+
+/* =========================================
+   ANPASSUNG: WORLD BARKS (Sprechblasen)
+   ========================================= */
+
+.world-bark {
+    padding: 10px 16px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0,0,0,0.1);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    z-index: 1000;
+}
+
+.world-bark::after {
+    border-top-color: rgba(255, 255, 255, 0.95);
+}
+
+/* Sparbuch Karten-UI */
+.savings-row { margin-bottom: 20px; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 15px; }
+.savings-row-label { font-size: 0.85rem; text-transform: uppercase; color: #7f8c8d; font-weight: 700; margin-bottom: 8px; }
+.savings-options-group { display: flex; gap: 10px; }
+.savings-card { flex: 1; background: white; border: 2px solid #e0e0e0; border-radius: 8px; padding: 10px; cursor: pointer; transition: all 0.2s ease; position: relative; opacity: 0.7; }
+.savings-card:hover { border-color: #bdc3c7; transform: translateY(-2px); opacity: 1; }
+.savings-card.active { border-color: var(--color-dark); background: #fdfbf7; opacity: 1; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+.savings-card.cheap.active { border-color: var(--color-success); background: rgba(46, 204, 113, 0.05); }
+.card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+.card-title { font-weight: 700; font-size: 0.95rem; color: var(--color-dark); }
+.card-price { font-weight: 800; font-family: monospace; font-size: 1.1rem; }
+.card-desc { font-size: 0.8rem; color: #7f8c8d; line-height: 1.2; }
+.savings-card.active::after { content: '✓'; position: absolute; top: -8px; right: -8px; background: var(--color-dark); color: white; width: 20px; height: 20px; border-radius: 50%; font-size: 12px; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+.savings-card.cheap.active::after { background: var(--color-success); }
+
+/* --- OPTIMIZED WORLD BARKS --- */
+.world-bark {
+    position: absolute;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    width: max-content;
+    max-width: 320px;
+    padding: 14px 20px;
+    
+    /* WICHTIG: RGBA für Transparenz */
+    background: rgba(255, 255, 255, 0.85) !important; 
+    
+    /* Blur Effekt */
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    
+    border-radius: 12px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+    border: 1px solid rgba(255,255,255,0.6);
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #2c3e50;
+    line-height: 1.4;
+    white-space: normal;
+    pointer-events: none;
+    z-index: 1000;
+    transform-origin: bottom center;
+    opacity: 0;
+    transform: translate(-50%, -100%) scale(0.8);
+    transition: opacity 0.3s ease-out, transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.world-bark.visible {
+    opacity: 1;
+    transform: translate(-50%, -100%) scale(1);
+}
+
+.world-bark .bark-avatar {
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background-size: cover;
+    background-position: center top;
+    background-color: #ecf0f1;
+    border: 3px solid white;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+
+.world-bark .bark-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.world-bark .bark-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    opacity: 0.6;
+    margin-bottom: 2px;
+}
+
+.world-bark.sterling {
+    background: #2c3e50;
+    color: #f1c40f;
+    border: 1px solid #34495e;
+}
+.world-bark.sterling .bark-label {
+    color: #bdc3c7;
+    opacity: 1;
+}
+.world-bark.sterling .bark-avatar {
+    border-color: #f1c40f;
+}
+
+.world-bark.crisis {
+    background: #fff;
+    border: 2px solid #e74c3c;
+    color: #c0392b;
+}
+.world-bark.crisis .bark-avatar {
+    border-color: #e74c3c;
+}
+
+.world-bark::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-top: 10px solid rgba(255, 255, 255, 0.85) !important; 
+    filter: drop-shadow(0 4px 2px rgba(0,0,0,0.05));
+}
+
+.world-bark.sterling::after { border-top-color: #2c3e50; }
+.world-bark.crisis::after { border-top-color: #e74c3c; }
+
+.harbor-controls {
+    position: absolute;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 8px;
+    border-radius: 50px;
+    background: rgba(30, 40, 50, 0.9);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    border: 1px solid rgba(255,255,255,0.1);
+    pointer-events: auto;
+    transition: opacity 0.5s;
+    display: flex;
+    gap: 10px;
+    z-index: var(--z-ui-stats);
+}
+
+.btn-toggle {
+    border: none;
+    border-radius: 40px;
+    padding: 12px 30px;
+    font-size: 1.1rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 240px;
+    justify-content: center;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.btn-toggle.stopped {
+    background: #c0392b;
+    color: white;
+}
+
+.btn-toggle.stopped:hover {
+    background: #e74c3c;
+    transform: scale(1.02);
+}
+
+.btn-toggle.running {
+    background: #27ae60;
+    color: white;
+}
+
+.btn-toggle.running:hover {
+    background: #2ecc71;
+    transform: scale(1.02);
+}
+
+#speed-controls {
+    position: absolute;
+    bottom: 30px;
+    right: 30px;
+    display: flex;
+    gap: 5px;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 5px;
+    border-radius: 8px;
+    backdrop-filter: blur(5px);
+    pointer-events: auto;
+    z-index: var(--z-ui-stats);
+}
+
+.btn-speed {
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    font-weight: bold;
+    font-family: monospace;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-speed:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.btn-speed.active {
+    background: var(--color-warning);
+    color: #1a1a1a;
+    border-color: var(--color-warning);
+}
+
+#dialog-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: var(--z-dialog);
+    opacity: 1;
+    transition: opacity 0.3s;
+    pointer-events: auto;
+}
+
+#dialog-overlay.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.dialog-box {
+    background: white;
+    width: 500px;
+    max-width: 90vw;
+    padding: 40px;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    position: relative;
+    animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+#dialog-close-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    background: var(--color-danger);
+    color: white;
+    font-weight: 800;
+    font-size: 1.1rem;
+    cursor: pointer;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.15s ease, background 0.2s ease;
+}
+
+#dialog-close-btn:hover {
+    background: #c0392b;
+    transform: scale(1.05);
+}
+
+@keyframes popIn {
+    from { transform: scale(0.9) translateY(20px); opacity: 0; }
+    to { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+/* --- UPDATE: Portrait Styles --- */
+
+/* Basis-Klasse für alle Avatare (Kreise in Dialogen & Cinematic) */
+#dialog-avatar, 
+#cinematic-avatar, 
+.sterling-avatar {
+    font-size: 0 !important; /* Versteckt das alte Emoji */
+    color: transparent;
+    
+    background-size: cover;
+    background-position: top center;
+    background-repeat: no-repeat;
+    background-color: #e0e0e0; /* Fallback Farbe, falls Bild fehlt */
+    
+    /* Rahmen und Schatten für besseren Look */
+    border: 3px solid white;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+#dialog-avatar {
+    margin-top: -70px;
+    margin-bottom: 15px;
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+#dialog-title {
+    margin: 0 0 15px 0;
+    color: var(--color-dark);
+    font-size: 1.5rem;
+}
+
+#dialog-text {
+    color: #555;
+    margin-bottom: 30px;
+    line-height: 1.6;
+    font-size: 1.05rem;
+    white-space: pre-wrap;
+}
+
+.btn-group {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.menu-grid {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.95rem;
+    text-transform: uppercase;
+}
+
+.btn:hover { transform: translateY(-2px); filter: brightness(110%); }
+.btn:active { transform: translateY(0); }
+
+.btn-primary { background: var(--color-dark); color: white; }
+.btn-danger { background: var(--color-danger); color: white; }
+.btn-success { background: var(--color-success); color: white; }
+
+.menu-btn {
+    padding: 15px;
+    background: #f8f9fa;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    color: var(--color-dark);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.menu-btn:hover:not(:disabled) {
+    background: white;
+    border-color: var(--color-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+}
+
+.menu-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background: #eee;
+}
+
+#toast-message {
+    position: absolute;
+    top: 15%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.85);
+    color: white;
+    padding: 12px 30px;
+    border-radius: 50px;
+    font-weight: 600;
+    z-index: var(--z-overlay);
+    transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    pointer-events: none;
+}
+
+#toast-message.hidden {
+    opacity: 0;
+    transform: translate(-50%, 20px);
+}
+
+/* Sicherstellen, dass interaktive UI-Elemente Klicks fangen */
+.dialog-box, .speech-bubble, .savings-book, .loan-contract, .menu-btn, #persistent-warning {
+    pointer-events: auto !important;
+}
+
+#persistent-warning {
+    position: absolute;
+    top: 100px; /* Unter den Stats */
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(231, 76, 60, 0.9); /* Rot */
+    color: white;
+    padding: 10px 25px;
+    border-radius: 50px;
+    font-weight: 700;
+    z-index: var(--z-overlay);
+    box-shadow: 0 4px 15px rgba(231, 76, 60, 0.4);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border: 2px solid rgba(255,255,255,0.3);
+    animation: pulseWarning 2s infinite;
+}
+
+#persistent-warning.hidden {
+    display: none;
+}
+
+@keyframes pulseWarning {
+    0% { transform: translateX(-50%) scale(1); }
+    50% { transform: translateX(-50%) scale(1.05); }
+    100% { transform: translateX(-50%) scale(1); }
+}
+
+#crisis-cards-container {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: var(--z-crisis-cards);
+}
+
+.crisis-bubble {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    min-width: 160px;
+    max-width: 200px;
+    background: rgba(255, 255, 255, 0.9);
+    border: 2px solid #e74c3c;
+    border-radius: 10px;
+    box-shadow: 0 8px 18px rgba(0,0,0,0.2);
+    color: #2c3e50;
+    font-weight: 700;
+    font-size: 0.9rem;
+    line-height: 1.3;
+    pointer-events: auto;
+    transform: translate(-50%, -100%) scale(0.9);
+    animation: popIn 0.2s ease-out forwards;
+}
+
+.crisis-bubble::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-top: 10px solid #e74c3c;
+    filter: drop-shadow(0 3px 3px rgba(0,0,0,0.2));
+}
+
+.crisis-bubble .crisis-icon {
+    font-size: 1.2rem;
+    line-height: 1;
+}
+
+.crisis-bubble .crisis-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    color: #2c3e50;
+    font-weight: 700;
+}
+
+.guidance-arrow {
+    position: absolute;
+    transform: translate(-50%, -120%);
+    font-size: 2.5rem;
+    color: #e74c3c;
+    pointer-events: none;
+    animation: bounce 1s infinite;
+    z-index: var(--z-overlay);
+}
+
+@keyframes bounce {
+    0%, 100% { transform: translate(-50%, -120%); }
+    50% { transform: translate(-50%, -140%); }
+}
+
+#savings-book-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(20, 28, 38, 0.65);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: var(--z-dialog);
+    pointer-events: auto;
+    backdrop-filter: blur(4px);
+}
+
+.savings-book.paper-texture,
+.savings-book.clipboard {
+    position: relative;
+    width: min(520px, 90vw);
+    padding: 24px 30px;
+    border-radius: 14px;
+    background: #fdfbf7;
+    box-shadow: 0 25px 80px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.8);
+    border: 1px solid rgba(0,0,0,0.08);
+    color: var(--color-dark);
+    transform: rotate(-1deg);
+    animation: floatSheet 0.5s ease-out;
+}
+
+.savings-clip {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 120px;
+    height: 32px;
+    background: linear-gradient(180deg, #d7d2cb, #b8b1a7);
+    border-radius: 8px 8px 12px 12px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+    border: 1px solid rgba(0,0,0,0.2);
+}
+
+.savings-page {
+    position: relative;
+    padding: 16px;
+    border-radius: 10px;
+    background: repeating-linear-gradient(
+        0deg,
+        rgba(0,0,0,0),
+        rgba(0,0,0,0) 10px,
+        rgba(0,0,0,0.04) 11px
+    );
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.02);
+}
+
+.savings-header {
+    margin-bottom: 12px;
+}
+
+.savings-title {
+    font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
+    font-weight: 800;
+    letter-spacing: 0.8px;
+    font-size: 1.3rem;
+}
+
+.savings-subtitle {
+    font-size: 0.95rem;
+    opacity: 0.7;
+    margin-top: 4px;
+}
+
+.savings-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 4px 0 10px 0;
+}
+
+.savings-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 14px;
+    background: rgba(255,255,255,0.9);
+    border-radius: 10px;
+    border: 1px solid rgba(0,0,0,0.08);
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.savings-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba(0,0,0,0.08);
+}
+
+.savings-label {
+    font-family: 'Courier New', monospace;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+}
+
+.savings-value {
+    font-weight: 800;
+    color: var(--color-success);
+    font-family: 'Courier New', monospace;
+}
+
+.savings-item.selected .savings-label,
+.savings-item.selected .savings-value {
+    color: #9aa0a6;
+    text-decoration: line-through;
+    text-decoration-thickness: 2px;
+    text-decoration-color: var(--color-danger);
+}
+
+.savings-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 12px 0 0 18px;
+}
+
+.savings-forecast {
+    margin-top: 16px;
+    padding: 14px 16px;
+    border-radius: 10px;
+    background: rgba(46, 204, 113, 0.12);
+    border: 1px solid rgba(46, 204, 113, 0.4);
+    color: var(--color-success);
+    font-weight: 700;
+    transform: translateY(8px);
+    animation: fadeInUp 0.25s ease-out;
+}
+
+.savings-stamp {
+    margin-top: 14px;
+    padding: 10px 14px;
+    display: inline-block;
+    color: var(--color-success);
+    border: 2px dashed rgba(46, 204, 113, 0.7);
+    border-radius: 6px;
+    font-weight: 900;
+    font-size: 1.1rem;
+    transform: rotate(-8deg) scale(1.05);
+    opacity: 0;
+}
+
+.animate-stamp {
+    animation: stampIn 0.35s ease-out forwards;
+}
+
+.forecast-text.success { color: var(--color-success); }
+
+@keyframes floatSheet {
+    from { opacity: 0; transform: translateY(15px) rotate(-1deg); }
+    to { opacity: 1; transform: translateY(0) rotate(-1deg); }
+}
+
+/* ==================== KREDITVERTRAG (BOOM Phase) ==================== */
+
+#loan-contract-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9000;
+    pointer-events: auto;
+    backdrop-filter: blur(4px);
+    background: rgba(0,0,0,0.4);
+}
+
+.loan-contract.clipboard {
+    position: relative;
+    width: min(580px, 90vw);
+    max-height: 85vh;
+    overflow-y: auto;
+    padding: 24px 30px;
+    border-radius: 14px;
+    background: #fdfbf7;
+    box-shadow: 0 25px 80px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.8);
+    border: 1px solid rgba(0,0,0,0.08);
+    color: var(--color-dark);
+    transform: rotate(-0.5deg);
+    animation: floatSheet 0.5s ease-out;
+}
+
+.contract-page {
+    position: relative;
+    padding: 20px;
+    border-radius: 10px;
+}
+
+.contract-header {
+    text-align: center;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid rgba(0,0,0,0.1);
+}
+
+.contract-title {
+    font-family: 'Georgia', serif;
+    font-weight: 800;
+    font-size: 1.6rem;
+    color: #2c3e50;
+    letter-spacing: 1px;
+}
+
+.contract-subtitle {
+    font-size: 0.9rem;
+    opacity: 0.6;
+    margin-top: 4px;
+    font-style: italic;
+}
+
+.contract-body {
+    margin: 20px 0;
+}
+
+.contract-section {
+    margin-bottom: 18px;
+    padding: 12px;
+    background: rgba(255,255,255,0.6);
+    border-radius: 8px;
+    border-left: 3px solid #3498db;
+}
+
+.contract-section h4 {
+    font-family: 'Georgia', serif;
+    font-size: 1.05rem;
+    margin-bottom: 8px;
+    color: #34495e;
+}
+
+.contract-section p {
+    font-size: 0.95rem;
+    line-height: 1.5;
+    margin: 6px 0;
+}
+
+.contract-note {
+    font-size: 0.85rem;
+    opacity: 0.7;
+    font-style: italic;
+}
+
+.contract-highlight {
+    background: rgba(241, 196, 15, 0.15);
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px dashed rgba(241, 196, 15, 0.6);
+    font-weight: 700;
+}
+
+.contract-warning {
+    color: #e74c3c;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.contract-signature {
+    margin: 24px 0;
+    padding: 16px;
+    background: rgba(236, 240, 241, 0.6);
+    border-radius: 8px;
+}
+
+.signature-line {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.signature-line label {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.signature-box {
+    padding: 16px 20px;
+    background: white;
+    border: 2px dashed rgba(0,0,0,0.2);
+    border-radius: 6px;
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.signature-box:hover {
+    border-color: #3498db;
+    background: rgba(52, 152, 219, 0.05);
+}
+
+.signature-box.signed {
+    border-color: #27ae60;
+    border-style: solid;
+    background: rgba(39, 174, 96, 0.08);
+}
+
+.signature-placeholder {
+    color: rgba(0,0,0,0.4);
+    font-style: italic;
+    font-size: 0.9rem;
+}
+
+.signature-text {
+    font-family: 'Brush Script MT', cursive;
+    font-size: 1.8rem;
+    color: #2c3e50;
+    font-weight: bold;
+}
+
+.contract-actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding-top: 16px;
+    border-top: 2px solid rgba(0,0,0,0.1);
+}
+
+.contract-actions .btn {
+    flex: 1;
+    padding: 14px 20px;
+    font-size: 1rem;
+}
+
+.floating-text {
+    position: absolute;
+    font-weight: 800;
+    font-size: 1.2rem;
+    pointer-events: none;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    animation: floatUp 2s ease-out forwards;
+    z-index: var(--z-crisis-cards);
+    white-space: nowrap;
+}
+
+/* Ergänzung bei .floating-text */
+.floating-text.expense {
+    color: #e74c3c !important; /* Knallrot */
+    font-size: 1.4rem;
+    text-shadow: 0 0 10px rgba(231, 76, 60, 0.5);
+    font-weight: 900;
+}
+
+@keyframes floatUp {
+    0% { transform: translateY(0) scale(1); opacity: 1; }
+    50% { opacity: 1; }
+    100% { transform: translateY(-80px) scale(1.1); opacity: 0; }
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(8px); }
+}
+
+@keyframes stampIn {
+    0% { transform: rotate(-14deg) scale(2); opacity: 0; }
+    60% { transform: rotate(-6deg) scale(1.1); opacity: 1; }
+    100% { transform: rotate(-8deg) scale(1.0); opacity: 1; }
+}
+
+.pulse-warning {
+    animation: pulseRed 2s infinite;
+}
+
+@keyframes pulseRed {
+    0% { color: var(--color-dark); }
+    50% { color: var(--color-danger); transform: scale(1.1); }
+    100% { color: var(--color-dark); }
+}
+
+#loading-screen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #E0F7FA;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: var(--z-overlay);
+    transition: opacity 0.5s;
+}
+
+#loading-screen.fade-out {
+    opacity: 0;
+    pointer-events: none;
+}
+
+#loading-screen h1 {
+    color: var(--color-dark);
+    margin-bottom: 10px;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid rgba(0,0,0,0.1);
+    border-left-color: var(--color-primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-top: 20px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+#skip-intro-btn {
+    position: absolute;
+    bottom: 30px;
+    right: 30px;
+    padding: 10px 16px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.35);
+    background: rgba(0,0,0,0.55);
+    color: white;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    cursor: pointer;
+    z-index: calc(var(--z-cinematic) + 10);
+    backdrop-filter: blur(4px);
+    transition: transform 0.2s ease, opacity 0.2s ease;
+    opacity: 0.85;
+    pointer-events: auto;
+}
+
+#skip-intro-btn:hover {
+    transform: translateY(-2px);
+    opacity: 1;
+}
+
+#collapse-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(10, 10, 10, 0.95);
+    z-index: var(--z-overlay);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 2s ease-in;
+}
+
+#collapse-overlay.visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+#cinematic-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: var(--z-cinematic);
+    pointer-events: none;
+}
+
+#cinematic-layer.active {
+    pointer-events: auto;
+}
+
+.cinematic-bar {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 0;
+    background: #000;
+    transition: height 1s ease-in-out;
+    z-index: var(--z-cinematic);
+}
+
+.cinematic-bar.top { top: 0; }
+.cinematic-bar.bottom { bottom: 0; }
+
+#cinematic-layer.active .cinematic-bar {
+    height: 10vh;
+}
+
+#cinematic-card {
+    position: absolute;
+    bottom: 15vh;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    width: 650px;
+    max-width: 90vw;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    padding: 25px;
+    display: flex;
+    align-items: center;
+    gap: 25px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+    border: 1px solid rgba(255,255,255,0.5);
+    opacity: 0;
+    transition: all 0.5s ease-out;
+    pointer-events: auto;
+}
+
+#cinematic-card.visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+#cinematic-avatar {
+    width: 120px;
+    height: 120px;
+    border-width: 4px;
+    border-color: var(--color-primary);
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.card-content {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-grow: 1;
+}
+
+.text-group {
+    flex-grow: 1;
+}
+
+#cinematic-title {
+    margin: 0 0 5px 0;
+    font-size: 1.3rem;
+    color: var(--color-dark);
+}
+
+#cinematic-body {
+    margin: 0;
+    font-size: 1rem;
+    color: #555;
+    line-height: 1.5;
+}
+
+#cinematic-next-btn {
+    background: var(--color-dark);
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 30px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.2s, background 0.2s;
+    white-space: nowrap;
+}
+
+#cinematic-next-btn:hover {
+    transform: scale(1.05);
+    background: #34495e;
+}
+
+#tutorial-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: var(--z-overlay);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.5s;
+}
+
+#tutorial-overlay.visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.dimmer {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.25);
+}
+
+.ui-highlight {
+    position: relative;
+    z-index: var(--z-overlay) !important;
+    background-color: var(--color-bg-ui);
+    box-shadow: 0 0 0 4px var(--color-primary), 0 0 50px rgba(0,0,0,0.5) !important;
+    transition: box-shadow 0.3s;
+}
+
+#tutorial-tooltip {
+    position: absolute;
+    background: white;
+    padding: 15px 25px;
+    border-radius: 8px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+    z-index: var(--z-overlay);
+    max-width: 300px;
+    font-weight: 500;
+    color: var(--color-dark);
+    border-left: 5px solid var(--color-primary);
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+
+
+
+
+.speech-bubble {
+    background: white;
+    padding: 25px 40px;
+    border-radius: 20px 20px 20px 0;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    max-width: 600px;
+    position: relative;
+    z-index: 1;
+    pointer-events: auto;
+    border: 2px solid var(--color-dark);
+    animation: popInBubble 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes popInBubble {
+    from { opacity: 0; transform: scale(0.8) translateY(20px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+
+.ui-layer-active {
+    z-index: var(--z-overlay) !important;
+}
+
+/* Versteckt nur die schwarzen Balken, wenn diese Klasse auf dem Layer liegt */
+#cinematic-layer.no-bars .cinematic-bar {
+    height: 0 !important;
+}
+
+/* --- Sterling Advisor UI (HUD) --- */
+.sterling-panel {
+    /* ÄNDERUNG: 'fixed' statt 'absolute', damit er sicher über allem liegt */
+    position: fixed; 
+    
+    /* ÄNDERUNG: Z-Index extrem hoch, um über Overlays und Cinematic zu liegen */
+    z-index: 9200 !important; 
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    pointer-events: none;
+    transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.5s ease;
+}
+
+.sterling-panel.menu-mode {
+    top: 50px;
+    left: 50%;
+    transform: translateX(320px) rotate(2deg);
+    width: 260px;
+}
+
+.sterling-panel.gameplay-mode {
+    top: 120px;
+    right: 40px;
+    width: 220px;
+    transform: translateX(0) rotate(0);
+}
+
+.sterling-panel.hidden {
+    opacity: 0;
+    transform: translateX(100px) !important;
+    pointer-events: none;
+}
+
+.sterling-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    margin-bottom: -15px;
+    z-index: 5;
+    background-color: #2c3e50;
+    border: 3px solid #f1c40f;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    background-size: cover;
+    background-position: center;
+}
+
+.sterling-bubble {
+    background: #2c3e50;
+    color: #f1c40f;
+    padding: 25px 15px 15px 15px;
+    border-radius: 12px;
+    border: 2px solid #f1c40f;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    font-size: 0.9rem;
+    line-height: 1.4;
+    text-align: center;
+    position: relative;
+    min-width: 200px;
+}
+
+.sterling-bubble::after {
+    content: '';
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 0 10px 10px 10px;
+    border-style: solid;
+    border-color: transparent transparent #f1c40f transparent;
+}
+
+
+/* =========================================
+   NEUES NARRATIVE SYSTEM (Dual Avatar)
+   ========================================= */
+
+#narrative-scene {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 100%; /* Nimmt Events nur unten an, siehe unten */
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 20px;
+    z-index: 9500; /* Höher als loan-contract-overlay (9000), damit Sterling davor liegt */
+    pointer-events: none; /* Klicks gehen durch leere Bereiche durch */
+    overflow: hidden;
+}
+
+#narrative-scene.hidden {
+    display: none;
+}
+
+/* --- Container für Bubble und Avatare --- */
+#narrative-bubble-container {
+    flex: 0 1 600px; /* Basisgröße 600px, kann schrumpfen */
+    margin: 0 20px 40px 20px; /* Abstand zu den Avataren */
+    z-index: 2;
+    position: relative;
+    pointer-events: auto;
+}
+
+/* --- Sprechblase Anpassungen --- */
+/* Wir überschreiben/erweitern die existierende .speech-bubble Klasse */
+#narrative-scene .speech-bubble {
+    background: white;
+    padding: 25px 30px;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    border: 3px solid var(--color-dark);
+    position: relative;
+    animation: slideUpBubble 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Sprecher Name in der Bubble */
+#narrative-speaker-name {
+    margin: 0;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    font-weight: 800;
+    color: var(--color-primary); /* Wird per JS oft überschrieben */
+    border-bottom: 1px solid #eee;
+    padding-bottom: 5px;
+    margin-bottom: 5px;
+}
+
+#narrative-text {
+    font-size: 1.1rem;
+    line-height: 1.5;
+    color: #333;
+    margin: 0;
+}
+
+/* --- Action Buttons (Innerhalb der Bubble) --- */
+.narrative-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed #eee;
+}
+
+.btn-action {
+    background: var(--color-dark);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 4px 0 rgba(0,0,0,0.2); /* 3D Effekt */
+}
+
+.btn-action.btn-positive {
+    background: linear-gradient(145deg, #1f8f4d, #27ae60);
+    box-shadow: 0 4px 0 rgba(0, 0, 0, 0.25);
+}
+
+.btn-action.btn-negative {
+    background: linear-gradient(145deg, #c0392b, #e74c3c);
+    box-shadow: 0 4px 0 rgba(0, 0, 0, 0.25);
+}
+
+.btn-action:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 0 rgba(0,0,0,0.2);
+    background: #34495e;
+}
+
+.btn-action.btn-positive:hover {
+    background: linear-gradient(145deg, #23965a, #2ecc71);
+}
+
+.btn-action.btn-negative:hover {
+    background: linear-gradient(145deg, #c53f33, #ee5a4b);
+}
+
+.btn-action:active {
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 rgba(0,0,0,0.2);
+}
+
+.flying-coin {
+    position: fixed;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #fff3b0, #f6d85f 45%, #d9a400);
+    box-shadow: 0 0 8px rgba(255, 230, 102, 0.9);
+    pointer-events: none;
+    transform: translate(0, 0) scale(1);
+    opacity: 0.95;
+    transition: transform 0.5s ease-in, opacity 0.5s ease-in;
+    z-index: 2000;
+}
+
+.coin-transfer-label {
+    position: fixed;
+    transform: translate(-50%, -50%) scale(0.9);
+    padding: 6px 10px;
+    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.8);
+    color: #fff9c4;
+    font-weight: 800;
+    font-size: 0.95rem;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+    z-index: 2001;
+}
+
+.coin-transfer-label.active {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+/* Kosten-Indikator im Button (Rot) */
+.cost-badge {
+    background: rgba(255,255,255,0.2);
+    color: #ffcccc;
+    font-size: 0.85rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.cost-badge.is-cost {
+    color: #ffecec;
+    background: rgba(192, 57, 43, 0.25);
+}
+
+.cost-badge.is-gain {
+    color: #e8ffef;
+    background: rgba(39, 174, 96, 0.25);
+}
+
+/* --- Charakter Slots (Links & Rechts) --- */
+.char-slot {
+    position: relative;
+    width: 300px;
+    height: 400px;
+    transition: all 0.4s ease;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+/* Inaktive Charaktere (nicht sprechend) abdunkeln */
+.char-slot.inactive {
+    transform: scale(0.9) translateY(20px);
+    filter: grayscale(0.6) brightness(0.7);
+    opacity: 0.8;
+    z-index: 0;
+}
+
+/* Aktive Charaktere hervorheben */
+.char-slot.active {
+    transform: scale(1.05) translateY(0);
+    filter: grayscale(0) brightness(1.1);
+    z-index: 3;
+}
+
+.char-img {
+    width: 100%;
+    height: 100%;
+    background-size: contain;
+    background-position: bottom center;
+    background-repeat: no-repeat;
+    filter: drop-shadow(0 5px 15px rgba(0,0,0,0.3));
+}
+
+@keyframes slideUpBubble {
+    from { opacity: 0; transform: translateY(30px) scale(0.95); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* --- Responsive Anpassungen --- */
+@media (max-width: 900px) {
+    .char-slot {
+        width: 150px;
+        height: 250px;
+    }
+    #narrative-bubble-container {
+        margin: 0 10px 20px 10px;
+    }
+}
+
+/* --- CYCLE EXPLANATION OVERLAY (OPTIMIERT) --- */
+#cycle-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(20, 30, 40, 0.8);
+    backdrop-filter: blur(8px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: var(--z-dialog);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+}
+
+#cycle-overlay:not(.hidden) {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.cycle-paper {
+    background: #fdfbf7;
+    width: 600px; /* Etwas breiter für das Dreieck */
+    padding: 30px 40px;
+    border-radius: 4px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    position: relative;
+    transform: rotate(-1deg);
+    /* Karo-Muster wie im Screenshot */
+    background-image: 
+        linear-gradient(90deg, rgba(0,0,0,0.05) 1px, transparent 1px),
+        linear-gradient(rgba(0,0,0,0.05) 1px, transparent 1px);
+    background-size: 20px 20px;
+    transition: all 0.5s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.cycle-paper.broken {
+    border: 2px solid #c0392b;
+    background-color: #fff0f0;
+    transform: rotate(1deg) scale(1.02);
+}
+
+.cycle-title {
+    font-family: 'Courier New', monospace;
+    text-transform: uppercase;
+    border-bottom: 3px solid #2c3e50;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+    color: #2c3e50;
+    font-weight: 900;
+    letter-spacing: 2px;
+    font-size: 1.5rem;
+    text-align: center;
+}
+
+.cycle-paper.broken .cycle-title {
+    color: #2c3e50 !important;
+    border-bottom-color: #2c3e50 !important;
+    text-decoration: none !important;
+}
+
+/* Das Dreiecks-Layout */
+.cycle-diagram {
+    position: relative;
+    width: 400px;
+    height: 300px;
+    margin: 20px 0;
+}
+
+.cycle-node {
+    position: absolute;
+    width: 90px;
+    height: 90px;
+    background: white;
+    border: 3px solid #2c3e50;
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    transition: all 0.5s ease;
+}
+
+/* Positionen im Dreieck */
+.node-player { top: 0; left: 50%; transform: translateX(-50%); border-color: #4ecdc4; }
+.node-tavern { bottom: 0; left: 0; border-color: #f1c40f; }
+.node-shipyard { bottom: 0; right: 0; border-color: #e67e22; }
+
+.node-icon { font-size: 2rem; margin-bottom: -5px; }
+.node-label { font-size: 0.75rem; font-weight: 800; text-transform: uppercase; margin-top: 5px; color: #555; }
+
+/* Die Geldbeutel-Anzeige */
+.node-wallet {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    background: #27ae60;
+    color: white;
+    border-radius: 12px;
+    padding: 4px 8px;
+    font-size: 0.85rem;
+    font-weight: bold;
+    font-family: monospace;
+    border: 2px solid white;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    transition: all 0.5s;
+    min-width: 40px;
+    text-align: center;
+}
+
+/* Wenn Geld fehlt, rot färben */
+.node-wallet.deficit { background: #c0392b; }
+.node-wallet.surplus { background: #2980b9; }
+
+/* Nuancen für Spar-Story */
+.node-wallet.inflated {
+    background: #2ecc71;
+    transform: scale(1.1);
+    box-shadow: 0 6px 18px rgba(46, 204, 113, 0.4);
+}
+
+.node-wallet.starved {
+    background: #c0392b;
+    animation: pulseRedBorder 1s infinite;
+}
+
+/* SVG Pfeile Container */
+.cycle-lines-svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 5;
+    pointer-events: none;
+}
+
+/* Pfeil-Styles */
+.arrow-path {
+    fill: none;
+    stroke: #bdc3c7; /* Inaktiv Grau */
+    stroke-width: 4;
+    transition: all 0.5s;
+    marker-end: url(#arrowhead-gray);
+}
+
+.arrow-path.active,
+.arrow-path.healthy {
+    stroke: #2c3e50;
+    stroke-width: 6;
+    stroke-dasharray: 1000;
+    stroke-dashoffset: 1000;
+    animation: dash 1.5s forwards;
+    marker-end: url(#arrowhead-dark);
+}
+
+.arrow-path.highlight {
+    stroke: #f1c40f; /* Goldener Fluss */
+    marker-end: url(#arrowhead-gold);
+}
+
+.arrow-path.throttled {
+    stroke: #2c3e50; /* Farbe bleibt dunkel ... */
+    stroke-width: 2px; /* ... aber deutlich dünner */
+    stroke-dasharray: none; /* Keine Striche, durchgezogen */
+    opacity: 0.3; /* Blass / Transparent */
+    marker-end: url(#arrowhead-gray); /* Graue Spitze */
+    transition: all 1.0s ease; /* Weicher Übergang von Active zu Throttled */
+}
+
+.arrow-path.broken {
+    stroke: #c0392b;
+    stroke-dasharray: 8, 6;
+    animation: none;
+    opacity: 0.9;
+    marker-end: url(#arrowhead-red);
+}
+
+@keyframes dash {
+    to { stroke-dashoffset: 0; }
+}
+
+.cycle-paper.broken .cycle-node {
+    filter: grayscale(0.25);
+    opacity: 0.9;
+}
+
+.cycle-paper.broken .node-wallet {
+    background: #c0392b;
+    border-color: #c0392b;
+    box-shadow: 0 4px 12px rgba(192, 57, 43, 0.55);
+}
+
+/* --- CYCLE CONTROLS & BUTTONS --- */
+
+.cycle-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin-top: 10px;
+    padding: 0 20px;
+}
+
+.btn-cycle {
+    background: var(--color-dark); /* #2c3e50 */
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 8px; /* Leicht abgerundet */
+    font-weight: 800;
+    font-size: 0.95rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    
+    /* Der 3D-Effekt wie bei den Story-Buttons */
+    box-shadow: 0 4px 0 rgba(0,0,0,0.2); 
+    position: relative;
+    min-width: 120px; /* Damit "Weiter" und "Zurück" gleich breit wirken */
+}
+
+/* Hover-Effekt: Button hebt sich leicht */
+.btn-cycle:hover:not(:disabled) {
+    background: #34495e; /* Etwas heller */
+    transform: translateY(-2px);
+    box-shadow: 0 6px 0 rgba(0,0,0,0.2);
+}
+
+/* Klick-Effekt: Button drückt sich ein */
+.btn-cycle:active:not(:disabled) {
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 rgba(0,0,0,0.2);
+}
+
+/* Disabled State (Grau und flach) */
+.btn-cycle:disabled {
+    background: #bdc3c7;
+    color: #ecf0f1;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: translateY(2px); /* Wirkt "eingedrückt" / inaktiv */
+}
+
+/* Der grüne "Verstanden" Button am Ende */
+.btn-cycle.finish {
+    background: var(--color-success); /* #2ecc71 */
+    box-shadow: 0 4px 0 rgba(39, 174, 96, 0.4);
+}
+
+.btn-cycle.finish:hover {
+    background: #27ae60;
+    box-shadow: 0 6px 0 rgba(39, 174, 96, 0.4);
+}
+
+/* Die Punkte in der Mitte */
+.step-dots {
+    font-size: 1.2rem;
+    color: #bdc3c7;
+    letter-spacing: 5px;
+    font-weight: bold;
+}
+
+/* --- NEUE SPARBUCH STYLES --- */
+
+/* Container für eine Zeile (z.B. Werft) */
+.savings-row {
+    margin-bottom: 20px;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    padding-bottom: 15px;
+}
+
+.savings-row-label {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    color: #7f8c8d;
+    font-weight: 700;
+    margin-bottom: 8px;
+    letter-spacing: 1px;
+}
+
+/* Container für die zwei Optionen */
+.savings-options-group {
+    display: flex;
+    gap: 10px;
+}
+
+/* Die einzelne Karte */
+.savings-card {
+    flex: 1;
+    background: white;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    opacity: 0.7;
+}
+
+.savings-card:hover {
+    border-color: #bdc3c7;
+    transform: translateY(-2px);
+    opacity: 1;
+}
+
+/* Aktiver Zustand */
+.savings-card.active {
+    border-color: var(--color-dark);
+    background: #fdfbf7; /* Papier-Ton */
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    opacity: 1;
+}
+
+/* Spezifisch für Spar-Option (Billig) */
+.savings-card.cheap.active {
+    border-color: #c0392b; /* Roter Rand für "Gefahr/Sparen" oder Grün für "Effizienz"? */
+    /* Wir nehmen Sterling-Blau oder Grün für "Profit" */
+    border-color: var(--color-success); 
+    background: rgba(46, 204, 113, 0.05);
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.card-title {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--color-dark);
+}
+
+.card-price {
+    font-weight: 800;
+    font-family: 'Courier New', monospace;
+    font-size: 1.1rem;
+}
+
+.card-desc {
+    font-size: 0.8rem;
+    color: #7f8c8d;
+    line-height: 1.2;
+}
+
+/* Checkmark Badge für aktive Karte */
+.savings-card.active::after {
+    content: '✓';
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: var(--color-dark);
+    color: white;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+.savings-card.cheap.active::after {
+    background: var(--color-success);
+}
+/* --- VERBESSERTE MÜNZ-ANIMATION --- */
+
+.flying-coin {
+    position: fixed;
+    width: 32px; /* Größer (vorher 14px) */
+    height: 32px;
+    background: radial-gradient(circle at 30% 30%, #ffd700, #f1c40f);
+    border: 2px solid #b7950b;
+    border-radius: 50%;
+    color: #b7950b;
+    font-weight: bold;
+    font-family: sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.4), 0 0 15px rgba(255, 215, 0, 0.6); /* Starker Glow */
+    z-index: 2000;
+    pointer-events: none;
+    /* Rotation während des Flugs */
+    animation: coinSpin 0.6s linear infinite; 
+}
+
+/* Dollar-Zeichen oder Symbol auf der Münze */
+.flying-coin::after {
+    content: '$';
+    font-size: 18px;
+    filter: drop-shadow(0 1px 0 rgba(255,255,255,0.4));
+}
+
+@keyframes coinSpin {
+    0% { transform: rotateY(0deg); }
+    100% { transform: rotateY(360deg); }
+}
+
+/* --- KAPITAL-ANZEIGE FEEDBACK --- */
+
+/* Wenn Geld ankommt: Groß, Grün und Wackeln */
+@keyframes popGreen {
+    0% { transform: scale(1); color: inherit; }
+    30% { transform: scale(1.5); color: #2ecc71; text-shadow: 0 0 10px #2ecc71; }
+    100% { transform: scale(1); color: inherit; }
+}
+
+/* Wenn Geld geht: Groß, Rot und Wackeln */
+@keyframes popRed {
+    0% { transform: scale(1); color: inherit; }
+    30% { transform: scale(1.5); color: #e74c3c; text-shadow: 0 0 10px #e74c3c; }
+    100% { transform: scale(1); color: inherit; }
+}
+
+.stat-pulse-gain {
+    animation: popGreen 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.stat-pulse-loss {
+    animation: popRed 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* --- VERBESSERTE DELTA ANZEIGE (+50) --- */
+.stat-money-delta {
+    position: absolute;
+    right: 0;
+    top: -25px; /* Höher schweben */
+    font-weight: 900;
+    font-size: 1.4rem; /* Viel größer */
+    opacity: 0;
+    pointer-events: none;
+    white-space: nowrap;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5); /* Schatten für Lesbarkeit */
+}
+
+.stat-money-delta.positive {
+    color: #2ecc71;
+    text-shadow: 0 0 10px rgba(46, 204, 113, 0.4);
+}
+
+.stat-money-delta.negative {
+    color: #e74c3c;
+    text-shadow: 0 0 10px rgba(231, 76, 60, 0.4);
+}
+
+.stat-money-delta.show {
+    animation: deltaFloat 1.5s ease-out forwards;
+}
+
+@keyframes deltaFloat {
+    0% { opacity: 0; transform: translateY(10px) scale(0.8); }
+    20% { opacity: 1; transform: translateY(0) scale(1.2); } /* Pop Effekt */
+    100% { opacity: 0; transform: translateY(-30px) scale(1); }
+}
+
+/* --- Styles für die fliegenden Münzen --- */
+.flying-coin {
+    position: fixed;
+    width: 24px;
+    height: 24px;
+    background: radial-gradient(circle at 30% 30%, #ffd700, #f1c40f);
+    border: 2px solid #b7950b;
+    border-radius: 50%;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    z-index: 2000;
+    pointer-events: none;
+    animation: spinCoin 0.5s linear infinite; 
+}
+
+@keyframes spinCoin {
+    0% { transform: rotateY(0deg); }
+    100% { transform: rotateY(360deg); }
+}
+
+/* --- Styles für die Delta-Anzeige oben (+20 / -30) --- */
+.stat-money-delta {
+    position: absolute;
+    right: 0;
+    bottom: -25px; /* Unter der Geldanzeige erscheinen */
+    font-weight: 900;
+    font-size: 1.2rem;
+    opacity: 0;
+    pointer-events: none;
+    white-space: nowrap;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    transition: none; /* JS steuert Animation */
+}
+
+.stat-money-delta.positive {
+    color: #2ecc71; /* Grün */
+}
+
+.stat-money-delta.negative {
+    color: #e74c3c; /* Rot */
+}
+
+.stat-money-delta.animate-pop,
+.stat-money-delta.show { /* Alias für bestehende JS-Logik */
+    animation: deltaPop 1.5s ease-out forwards;
+}
+
+@keyframes deltaPop {
+    0% { opacity: 0; transform: translateY(-10px) scale(0.5); }
+    20% { opacity: 1; transform: translateY(0) scale(1.2); }
+    100% { opacity: 0; transform: translateY(20px) scale(1); }
+}
+
+/* Container relativ machen, damit Delta absolut positioniert werden kann */
+#stat-money-container {
+    position: relative; 
+}
+
+/* --- CYCLE OVERLAY: LAYOUT & STABILITÄT --- */
+
+.cycle-paper {
+    background: #fff;
+    width: 650px;
+    height: 720px; /* Fixe Gesamthöhe erhöht für Stabilität */
+    padding: 30px 40px;
+    border-radius: 2px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    position: relative;
+    transform: rotate(-0.5deg);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start; /* Inhalt von oben aufbauen */
+    
+    /* Hintergrund-Gitter */
+    background-image: 
+        linear-gradient(#f0f0f0 1px, transparent 1px),
+        linear-gradient(90deg, #f0f0f0 1px, transparent 1px);
+    background-size: 20px 20px;
+    background-position: center;
+}
+
+/* Titel fixieren */
+.cycle-title {
+    flex: 0 0 auto; /* Darf nicht schrumpfen */
+    height: 60px;   /* Fester Platz */
+    font-family: 'Courier New', monospace;
+    text-transform: uppercase;
+    text-align: center;
+    border-bottom: 4px solid #2c3e50;
+    margin-bottom: 10px;
+    color: #2c3e50;
+    font-weight: 800;
+    font-size: 1.6rem;
+    letter-spacing: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Diagramm Bereich fixieren */
+.cycle-diagram {
+    position: relative;
+    width: 100%;
+    height: 320px; /* Feste Höhe für das Dreieck, damit es nicht springt */
+    flex: 0 0 320px;
+    margin: 10px 0;
+}
+
+/* Text Bereich fixieren (Reserviert Platz für bis zu 4 Zeilen) */
+.cycle-text-area {
+    background: white;
+    padding: 20px 30px;
+    border: 2px dashed #ccc;
+    border-radius: 12px;
+    margin-top: 10px;
+    margin-bottom: 20px;
+    height: 160px; /* Feste Höhe! Text wächst darin, schiebt aber nichts weg */
+    flex: 0 0 160px; 
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    gap: 10px;
+    overflow: hidden; /* Sicherheitshalber */
+}
+
+/* Controls unten fixieren */
+.cycle-controls {
+    margin-top: auto; /* Drückt die Buttons ganz nach unten */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 0 10px;
+}
+
+/* --- DIAGRAMM BEREICH (FIXIERT AUF SVG KOORDINATEN) --- */
+
+.cycle-diagram {
+    position: relative;
+    /* WICHTIG: Feste Breite passend zur SVG ViewBox (400x320) */
+    width: 400px; 
+    height: 320px;
+    flex: 0 0 320px;
+    /* Zentriert den Container im Papier */
+    margin: 10px auto; 
+    /* Debug-Rahmen entfernen, falls vorhanden */
+    border: none;
+}
+
+/* --- SVG & PFEILE --- */
+
+.cycle-lines-svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    pointer-events: none;
+    overflow: visible;
+}
+
+.arrow-path.simple {
+    fill: none;
+    stroke: #2c3e50 !important;
+    stroke-width: 2px;
+    stroke-linecap: round;
+    opacity: 0;
+    transition: opacity 0.5s ease-in;
+    marker-end: url(#arrowhead-dark);
+}
+
+.arrow-path.simple.visible {
+    opacity: 1;
+}
+
+.arrow-label {
+    fill: #c0392b;
+    font-size: 11px;
+    font-weight: 800;
+    font-family: 'Segoe UI', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    opacity: 0;
+    transition: opacity 0.5s ease-in;
+    text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff, 0 0 4px #fff;
+}
+
+.arrow-label.visible {
+    opacity: 1;
+}
+
+/* --- NODES POSITIONIERUNG (GLEICHSEITIGES DREIECK) --- */
+/*
+   Mittelpunkt Diagramm: x=200, y=185
+   Radius: 130px
+   
+   Player (Oben, 270°): x=200, y=55
+   Mo (Links unten, 150°): x=88, y=250
+   Kian (Rechts unten, 30°): x=312, y=250
+*/
+
+.cycle-node {
+    position: absolute;
+    width: 90px;   /* Vorher 110px */
+    height: 90px;  /* Vorher 110px */
+    background: white;
+    border: 4px solid #2c3e50;
+    border-radius: 50%;
+    z-index: 10;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    overflow: visible; /* Labels können überstehen */
+    position: absolute;
+    
+    /* Zentrierung korrigiert für 90px Breite */
+    margin-left: -45px; 
+    margin-top: -45px;
+    
+    transform: scale(1);
+    transition: border-color 0.3s;
+}
+
+/* Mathematisch korrekte Koordinaten */
+.node-player { left: 200px; top: 55px; } 
+.node-tavern { left: 88px; top: 250px; }
+.node-shipyard { left: 312px; top: 250px; }
+
+.node-portrait {
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center top;
+    background-repeat: no-repeat;
+    border-radius: 50%;
+}
+
+.node-label {
+    position: absolute;
+    bottom: -12px; /* Etwas tiefer da Node kleiner */
+    background: rgba(255, 255, 255, 0.95);
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: #2c3e50;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+    z-index: 20;
+}
+
+/* --- KRISE ANIMATION (KEIN SPRINGEN) --- */
+
+.cycle-node.crisis {
+    border-color: #c0392b;
+    /* Wir nutzen hier KEIN Translate, da die Position über top/left/margin fixiert ist */
+    animation: pulseCrisis 1.5s infinite;
+}
+
+@keyframes pulseCrisis {
+    /* Start und Ende müssen exakt scale(1) sein, um Sprünge zu vermeiden */
+    0% { 
+        transform: scale(1); 
+        box-shadow: 0 0 0 0 rgba(192, 57, 43, 0.5); 
+    }
+    50% { 
+        transform: scale(1.08); 
+        box-shadow: 0 0 0 12px rgba(192, 57, 43, 0); 
+    }
+    100% { 
+        transform: scale(1); 
+        box-shadow: 0 0 0 0 rgba(192, 57, 43, 0); 
+    }
+}
+
+/* --- ANIMATION CLASSES --- */
+
+/* Die fliegende Münze im Diagramm */
+.cycle-coin {
+    position: absolute;
+    width: 24px;
+    height: 24px;
+    background: radial-gradient(circle at 30% 30%, #ffd700, #f1c40f);
+    border: 2px solid #b7950b;
+    border-radius: 50%;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    z-index: 20;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    font-size: 12px;
+    color: #b7950b;
+    pointer-events: none;
+}
+.cycle-coin::after { content: '$'; }
+
+/* Schwebende Delta-Texte (+30 / -20) */
+.cycle-delta {
+    position: absolute;
+    font-weight: 900;
+    font-size: 1.4rem;
+    z-index: 30;
+    pointer-events: none;
+    text-shadow: 1px 1px 0 #fff, -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff; /* White Outline */
+    animation: floatDelta 1.5s ease-out forwards;
+}
+
+.cycle-delta.positive { color: #27ae60; }
+.cycle-delta.negative { color: #c0392b; }
+
+@keyframes floatDelta {
+    0% { transform: translateY(0) scale(0.5); opacity: 0; }
+    20% { transform: translateY(-10px) scale(1.2); opacity: 1; }
+    100% { transform: translateY(-40px) scale(1); opacity: 0; }
+}
+
+/* Wallet Pulse wenn Geld ankommt */
+.wallet-bump { animation: bump 0.3s ease-out; }
+
+@keyframes bump {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.3); }
+    100% { transform: scale(1); }
+}
+
+/* --- CYCLE OVERLAY: BROKEN STATE ERWEITERUNGEN --- */
+
+/* Karten / Badges im Diagramm */
+.cycle-badge {
+    position: absolute;
+    background: white;
+    padding: 6px 10px;
+    border-radius: 4px;
+    border-left: 4px solid #c0392b; /* Roter Rand links */
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #2c3e50;
+    z-index: 50;
+    white-space: nowrap;
+    animation: popInBadge 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.cycle-badge .icon { font-size: 1.1rem; }
+
+@keyframes popInBadge {
+    from { transform: scale(0.5); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+/* Wallet Pulse Rot (Alarm) */
+.wallet-pulse-red {
+    animation: pulseRedBorder 1s infinite;
+    background-color: #c0392b !important;
+}
+
+@keyframes pulseRedBorder {
+    0% { box-shadow: 0 0 0 0 rgba(192, 57, 43, 0.7); }
+    70% { box-shadow: 0 0 0 6px rgba(192, 57, 43, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(192, 57, 43, 0); }
+}
+
+/* Node ausgegraut */
+.cycle-node.inactive {
+    filter: grayscale(1.0);
+    opacity: 0.7;
+    border-color: #95a5a6;
+}
+
+/* Münze Zerplatzen Animation */
+.cycle-coin.shatter {
+    background: #c0392b; /* Rot */
+    border-color: #922b21;
+    color: transparent; /* $ weg */
+    /* KEINE Transform-Animation hier: JS steuert die Bewegung */
+    animation: none;
+    z-index: 30;
+    box-shadow: 0 0 10px rgba(192, 57, 43, 0.8);
+}
+
+/* Animation für das Verschwinden des Pfeils (Der "Plopp") */
+.arrow-path.pop-out {
+    animation: popOutEffect 0.4s ease-in forwards;
+    transform-origin: center;
+}
+
+@keyframes popOutEffect {
+    0% { opacity: 1; transform: scale(1); }
+    40% { opacity: 1; transform: scale(1.2); } /* Kurz aufblähen */
+    100% { opacity: 0; transform: scale(0.1); } /* Verschwinden */
+}
+
+/* --- NEUES PFEIL DESIGN FÜR BROKEN CYCLE --- */
+
+/* --- CYCLE DIAGRAMM ANPASSUNGEN --- */
+
+/* Node Design mit Portrait */
+.cycle-node {
+    width: 110px;
+    height: 110px;
+    background: white;
+    border: 4px solid #2c3e50;
+    border-radius: 50%;
+    z-index: 10;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    overflow: hidden; /* Damit das Bild rund bleibt */
+    position: absolute;
+}
+
+/* Das Bild im Kreis */
+.node-portrait {
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center top;
+    background-repeat: no-repeat;
+}
+
+/* Label unter dem Node (Du, Mo, Kian) */
+.node-label {
+    position: absolute;
+    bottom: 10px;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.8rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: #2c3e50;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* --- KRISE / IMPACT STYLES (Ersetzt Wallet Logic) --- */
+
+/* Wenn ein Node betroffen ist (kein Geld/Umsatz), blinkt der Rahmen rot */
+.cycle-node.crisis {
+    border-color: #c0392b;
+    box-shadow: 0 0 0 4px rgba(192, 57, 43, 0.3);
+    animation: pulseNodeRed 1.5s infinite;
+}
+
+@keyframes pulseNodeRed {
+    0% { transform: translateX(-50%) scale(1); box-shadow: 0 0 0 0 rgba(192, 57, 43, 0.7); }
+    70% { transform: translateX(-50%) scale(1.05); box-shadow: 0 0 0 10px rgba(192, 57, 43, 0); }
+    100% { transform: translateX(-50%) scale(1); box-shadow: 0 0 0 0 rgba(192, 57, 43, 0); }
+}
+
+/* Spezialfall für Mo/Kian (Transform ist dort anders definiert) */
+.cycle-node.node-tavern.crisis, 
+.cycle-node.node-shipyard.crisis {
+    animation: pulseNodeRedFixed 1.5s infinite;
+}
+
+@keyframes pulseNodeRedFixed {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(192, 57, 43, 0.7); }
+    70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(192, 57, 43, 0); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(192, 57, 43, 0); }
+}
+
+/* --- PFEILE & TEXT --- */
+
+/* Der schwarze Strich */
+.arrow-path.simple {
+    stroke: #2c3e50 !important; /* WICHTIG: Schwarz erzwingen */
+    stroke-width: 2px;
+    stroke-dasharray: none;
+    fill: none;
+    opacity: 0;
+    transition: opacity 0.5s ease-in;
+    marker-end: url(#arrowhead-dark);
+}
+
+.arrow-path.simple.visible {
+    opacity: 1;
+}
+
+/* Der Text auf dem Pfad */
+.arrow-label {
+    fill: #c0392b; /* Roter Text */
+    font-size: 11px;
+    font-weight: 800;
+    font-family: 'Segoe UI', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    opacity: 0;
+    transition: opacity 0.5s ease-in;
+    /* Weißer Rand um Text für Lesbarkeit über schwarzen Pfeilen */
+    text-shadow: 
+        1px 1px 0 #fff, -1px -1px 0 #fff, 
+        1px -1px 0 #fff, -1px 1px 0 #fff,
+        0px 0px 4px #fff; 
+}
+
+.arrow-label.visible {
+    opacity: 1;
+}
+
+/* --- FIX FÜR SPRINGENDEN KAPITÄN --- */
+
+/* Wir stellen sicher, dass die Animation KEIN translate verwendet */
+@keyframes pulseCrisis {
+    0% { 
+        transform: scale(1); 
+        box-shadow: 0 0 0 0 rgba(192, 57, 43, 0.5); 
+    }
+    50% { 
+        transform: scale(1.08); 
+        box-shadow: 0 0 0 12px rgba(192, 57, 43, 0); 
+    }
+    100% { 
+        transform: scale(1); 
+        box-shadow: 0 0 0 0 rgba(192, 57, 43, 0); 
+    }
+}
+
+/* Node im Krisenmodus: explizit transform-origin setzen */
+.cycle-node.crisis {
+    border-color: #c0392b;
+    animation: pulseCrisis 1.5s infinite;
+    transform-origin: center center;
+}
+
+/* --- CYCLE DIAGRAMM ANPASSUNGEN --- */
+
+/* Node Design: KLEINER (90px statt 110px) */
+.cycle-node {
+    width: 90px;
+    height: 90px;
+    background: white;
+    border: 4px solid #2c3e50;
+    border-radius: 50%;
+    z-index: 10;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    overflow: visible;
+    position: absolute;
+    margin-left: -45px;
+    margin-top: -45px;
+}
+
+.node-portrait {
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center top;
+    background-repeat: no-repeat;
+    border-radius: 50%;
+    overflow: hidden;
+}
+
+.node-label {
+    position: absolute;
+    bottom: -12px;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: #2c3e50;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+    z-index: 20;
+}
+
+/* Wallets standardmäßig verstecken */
+.node-wallet {
+    display: none;
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #27ae60;
+    color: white;
+    border-radius: 12px;
+    padding: 2px 6px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    font-family: monospace;
+    border: 2px solid white;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    min-width: 30px;
+    text-align: center;
+    z-index: 30;
+}
+
+.node-wallet.visible,
+.node-wallet.deficit {
+    display: block;
+}
+
+.node-wallet.deficit {
+    background: #c0392b;
+    animation: pulseRedBorder 1s infinite;
+}
+
+/* Text auf Pfeilen: kleiner und enger */
+.arrow-label {
+    fill: #c0392b;
+    font-size: 9px;
+    font-weight: 800;
+    font-family: 'Segoe UI', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    opacity: 0;
+    transition: opacity 0.5s ease-in;
+    text-shadow: 
+        1px 1px 0 #fff, -1px -1px 0 #fff, 
+        1px -1px 0 #fff, -1px 1px 0 #fff;
+}
+
+.arrow-label.visible {
+    opacity: 1;
+}
+
+/* Marker minimal kleiner skalieren */
+.cycle-lines-svg marker path {
+    transform: scale(0.9);
+}
+
+#persistent-warning.neutral-hint {
+    position: absolute;
+    top: 100px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(100, 100, 100, 0.9);
+    color: white;
+    padding: 10px 25px;
+    border-radius: 50px;
+    font-weight: 600;
+    z-index: var(--z-overlay);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border: 1px solid rgba(255,255,255,0.2);
+    animation: none;
+}
+
+#persistent-warning.neutral-hint .warning-icon {
+    display: none;
+}
