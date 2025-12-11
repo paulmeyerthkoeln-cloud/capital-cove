@@ -62,11 +62,11 @@ body {
     right: 20px;
     display: flex;
     gap: 20px;
-    background: var(--color-bg-ui);
+    background: rgba(255, 255, 255, 0.95) !important;
     padding: 12px 25px;
     border-radius: 12px;
     box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-    backdrop-filter: blur(8px);
+    /* backdrop-filter: blur(8px); */
     border: 1px solid rgba(255,255,255,0.5);
     pointer-events: auto;
     align-items: center;
@@ -134,7 +134,7 @@ body {
     font-size: 0.9rem;
     letter-spacing: 1px;
     border: 1px solid rgba(255,255,255,0.1);
-    backdrop-filter: blur(4px);
+    /* backdrop-filter: blur(4px); */
     pointer-events: auto;
     text-transform: uppercase;
     z-index: var(--z-ui-stats);
@@ -144,12 +144,12 @@ body {
     position: absolute;
     top: 90px;
     left: 20px;
-    background: rgba(0, 0, 0, 0.75);
+    background: rgba(0, 0, 0, 0.95) !important;
     color: white;
     padding: 15px;
     border-radius: 8px;
     border-left: 4px solid var(--color-primary);
-    backdrop-filter: blur(4px);
+    /* backdrop-filter: blur(4px); */
     max-width: 300px;
     pointer-events: auto;
     transition: transform 0.3s;
@@ -334,14 +334,14 @@ body {
     width: max-content;
     max-width: 320px;
     padding: 14px 20px;
-    
+
     /* WICHTIG: RGBA für Transparenz */
-    background: rgba(255, 255, 255, 0.85) !important; 
-    
-    /* Blur Effekt */
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    
+    background: rgba(255, 255, 255, 0.95) !important;
+
+    /* Blur Effekt - OPTIMIERUNG: Entfernt für bessere Performance */
+    /* backdrop-filter: blur(8px); */
+    /* -webkit-backdrop-filter: blur(8px); */
+
     border-radius: 12px;
     box-shadow: 0 8px 30px rgba(0,0,0,0.1);
     border: 1px solid rgba(255,255,255,0.6);
@@ -436,8 +436,8 @@ body {
     transform: translateX(-50%);
     padding: 8px;
     border-radius: 50px;
-    background: rgba(30, 40, 50, 0.9);
-    backdrop-filter: blur(10px);
+    background: rgba(30, 40, 50, 0.95) !important;
+    /* backdrop-filter: blur(10px); */
     box-shadow: 0 10px 30px rgba(0,0,0,0.3);
     border: 1px solid rgba(255,255,255,0.1);
     pointer-events: auto;
@@ -491,10 +491,10 @@ body {
     right: 30px;
     display: flex;
     gap: 5px;
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.95) !important;
     padding: 5px;
     border-radius: 8px;
-    backdrop-filter: blur(5px);
+    /* backdrop-filter: blur(5px); */
     pointer-events: auto;
     z-index: var(--z-ui-stats);
 }
@@ -528,8 +528,8 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(4px);
+    background: rgba(0, 0, 0, 0.7) !important;
+    /* backdrop-filter: blur(4px); */
     display: flex;
     justify-content: center;
     align-items: center;
@@ -817,13 +817,13 @@ body {
 #savings-book-overlay {
     position: absolute;
     inset: 0;
-    background: rgba(20, 28, 38, 0.65);
+    background: rgba(20, 28, 38, 0.9) !important;
     display: flex;
     justify-content: center;
     align-items: center;
     z-index: var(--z-dialog);
     pointer-events: auto;
-    backdrop-filter: blur(4px);
+    /* backdrop-filter: blur(4px); */
 }
 
 .savings-book.paper-texture,
@@ -984,8 +984,8 @@ body {
     justify-content: center;
     z-index: 9000;
     pointer-events: auto;
-    backdrop-filter: blur(4px);
-    background: rgba(0,0,0,0.4);
+    /* backdrop-filter: blur(4px); */
+    background: rgba(0,0,0,0.7) !important;
 }
 
 .loan-contract.clipboard {
@@ -1237,13 +1237,13 @@ body {
     padding: 10px 16px;
     border-radius: 8px;
     border: 1px solid rgba(255,255,255,0.35);
-    background: rgba(0,0,0,0.55);
+    background: rgba(0,0,0,0.85) !important;
     color: white;
     font-weight: 700;
     letter-spacing: 0.3px;
     cursor: pointer;
     z-index: calc(var(--z-cinematic) + 10);
-    backdrop-filter: blur(4px);
+    /* backdrop-filter: blur(4px); */
     transition: transform 0.2s ease, opacity 0.2s ease;
     opacity: 0.85;
     pointer-events: auto;
@@ -1315,8 +1315,8 @@ body {
     transform: translateX(-50%) translateY(20px);
     width: 650px;
     max-width: 90vw;
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.98) !important;
+    /* backdrop-filter: blur(10px); */
     border-radius: 12px;
     padding: 25px;
     display: flex;
@@ -1772,8 +1772,8 @@ body {
 #cycle-overlay {
     position: absolute;
     inset: 0;
-    background: rgba(20, 30, 40, 0.8);
-    backdrop-filter: blur(8px);
+    background: rgba(20, 30, 40, 0.95) !important;
+    /* backdrop-filter: blur(8px); */
     display: flex;
     justify-content: center;
     align-items: center;

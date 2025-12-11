@@ -137,7 +137,8 @@ export class Water {
     }
 
     init() {
-        const geometry = new THREE.PlaneGeometry(1000, 1000, 128, 128);
+        // OPTIMIERUNG: Segmente von 128 auf 64 reduziert
+        const geometry = new THREE.PlaneGeometry(1000, 1000, 64, 64);
 
         this.material = new THREE.ShaderMaterial({
             vertexShader: vertexShader,

@@ -38,11 +38,13 @@ class SceneSetup {
             powerPreference: "high-performance"
         });
         
-        this.renderer.setPixelRatio(window.devicePixelRatio);
+        // OPTIMIERUNG: PixelRatio auf max 1.5 begrenzen für Tablets
+        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
         this.renderer.setSize(window.innerWidth, window.innerHeight);
-        
+
         this.renderer.shadowMap.enabled = true;
-        this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        // OPTIMIERUNG: BasicShadowMap statt PCFSoftShadowMap für bessere Performance
+        this.renderer.shadowMap.type = THREE.BasicShadowMap;
 
         if (container) {
             container.innerHTML = '';
