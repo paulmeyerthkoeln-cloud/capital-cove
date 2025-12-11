@@ -80,6 +80,8 @@ export class UIManager {
             cycleCloseBtn: null,
         };
         this.moneyDeltaTimeout = null;
+        this.worldBarkQueue = [];
+        this.worldBarkActive = false;
 
         this.dockPosition = new THREE.Vector3(0, 5, 100);
         this.cinematicCallback = null;
@@ -2923,86 +2925,133 @@ export class UIManager {
     // 2. Positionierung der Barks (Punkt 3: Höher & Zentral)
     showWorldBark(data) {
         if (!data || !data.targetId) return;
-        
-        const targetPos = this.getTargetWorldPosition(data.targetId);
-        if (!targetPos) return;
 
-        const el = document.createElement('div');
-        const isSterling = data.speaker === 'Sterling';
-        el.className = `world-bark ${data.isCrisis ? 'crisis' : ''} ${isSterling ? 'sterling' : ''}`;
-        
-        let avatarHtml = '';
-        if (data.speaker && this.avatars[data.speaker]) {
-            const url = this.avatars[data.speaker];
-            avatarHtml = `<div class="bark-avatar" style="background-image: url('${url}')"></div>`;
-        } else if (data.icon) {
-            avatarHtml = `<div class="bark-avatar" style="display:flex;align-items:center;justify-content:center;font-size:1.5rem;">${data.icon}</div>`;
+        this.worldBarkQueue.push(data);
+        if (!this.worldBarkActive) {
+            this.processWorldBarkQueue();
+        }
+    }
+
+    async processWorldBarkQueue() {
+        if (this.worldBarkQueue.length === 0) {
+            this.worldBarkActive = false;
+            return;
         }
 
-        const labelHtml = isSterling
-            ? '<span class="bark-label">Advisor</span>'
-            : (data.speaker ? `<span class="bark-label">${data.speaker}</span>` : '');
+        this.worldBarkActive = true;
+        const next = this.worldBarkQueue.shift();
+        await this.displayWorldBark(next);
 
-        el.innerHTML = `
-            ${avatarHtml}
-            <div class="bark-content">
-                ${labelHtml}
-                <span>${data.text}</span>
-            </div>
-        `;
-        
-        this.elements.uiLayer.appendChild(el);
+        if (this.worldBarkQueue.length > 0) {
+            await new Promise(res => setTimeout(res, 150));
+            this.processWorldBarkQueue();
+        } else {
+            this.worldBarkActive = false;
+        }
+    }
 
-        let frameId;
-        const startTime = Date.now();
-        const duration = 3200;
-
-        const updatePos = () => {
-            if (!el.parentNode) {
-                cancelAnimationFrame(frameId);
+    displayWorldBark(data) {
+        return new Promise((resolve) => {
+            if (!data || !data.targetId) {
+                resolve();
+                return;
+            }
+            
+            const targetPos = this.getTargetWorldPosition(data.targetId);
+            if (!targetPos) {
+                resolve();
                 return;
             }
 
-            if (Date.now() - startTime > duration) {
+            const el = document.createElement('div');
+            const isSterling = data.speaker === 'Sterling';
+            el.className = `world-bark ${data.isCrisis ? 'crisis' : ''} ${isSterling ? 'sterling' : ''}`;
+            
+            let avatarHtml = '';
+            if (data.speaker && this.avatars[data.speaker]) {
+                const url = this.avatars[data.speaker];
+                avatarHtml = `<div class="bark-avatar" style="background-image: url('${url}')"></div>`;
+            } else if (data.icon) {
+                avatarHtml = `<div class="bark-avatar" style="display:flex;align-items:center;justify-content:center;font-size:1.5rem;">${data.icon}</div>`;
+            }
+
+            const labelHtml = isSterling
+                ? '<span class="bark-label">Advisor</span>'
+                : (data.speaker ? `<span class="bark-label">${data.speaker}</span>` : '');
+
+            el.innerHTML = `
+                ${avatarHtml}
+                <div class="bark-content">
+                    ${labelHtml}
+                    <span>${data.text}</span>
+                </div>
+            `;
+            
+            this.elements.uiLayer.appendChild(el);
+
+            let frameId;
+            const startTime = Date.now();
+            const duration = 3200;
+
+            const cleanup = () => {
+                if (!el.parentNode) {
+                    resolve();
+                    return;
+                }
                 el.classList.remove('visible');
-                setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 300);
-                cancelAnimationFrame(frameId);
-                return;
-            }
+                setTimeout(() => { 
+                    if (el.parentNode) el.parentNode.removeChild(el);
+                    resolve(); 
+                }, 300);
+            };
 
-            const vec = targetPos.clone();
-            vec.project(sceneSetup.camera);
+            const updatePos = () => {
+                if (!el.parentNode) {
+                    cancelAnimationFrame(frameId);
+                    resolve();
+                    return;
+                }
 
-            const distance = sceneSetup.camera.position.distanceTo(targetPos);
-            let scale = 1.0;
-            if (distance < 600) {
-                scale = 1.2 - (distance / 1000);
-                scale = Math.max(0.85, Math.min(1.1, scale));
-            }
+                if (Date.now() - startTime > duration) {
+                    cancelAnimationFrame(frameId);
+                    cleanup();
+                    return;
+                }
 
-            const x = (vec.x * 0.5 + 0.5) * window.innerWidth;
-            const y = (-(vec.y * 0.5) + 0.5) * window.innerHeight;
+                const vec = targetPos.clone();
+                vec.project(sceneSetup.camera);
 
-            // KORREKTUR: Wieder etwas tiefer, damit sie nicht über dem HUD liegen (Punkt 6)
-            // War -120, jetzt -90
-            const yOffset = -90 * scale; 
+                const distance = sceneSetup.camera.position.distanceTo(targetPos);
+                let scale = 1.0;
+                if (distance < 600) {
+                    scale = 1.2 - (distance / 1000);
+                    scale = Math.max(0.85, Math.min(1.1, scale));
+                }
 
-            if (vec.z > 1) {
-                el.style.display = 'none';
-            } else {
-                el.style.display = 'flex';
-                // Positionierung zentriert über dem Punkt
-                el.style.transform = `translate(${x}px, ${y + yOffset}px) translate(-50%, -100%) scale(${scale})`;
-            }
+                const x = (vec.x * 0.5 + 0.5) * window.innerWidth;
+                const y = (-(vec.y * 0.5) + 0.5) * window.innerHeight;
 
-            if (!el.classList.contains('visible')) {
-                requestAnimationFrame(() => el.classList.add('visible'));
-            }
+                // KORREKTUR: Wieder etwas tiefer, damit sie nicht über dem HUD liegen (Punkt 6)
+                // War -120, jetzt -90
+                const yOffset = -90 * scale; 
 
-            frameId = requestAnimationFrame(updatePos);
-        };
+                if (vec.z > 1) {
+                    el.style.display = 'none';
+                } else {
+                    el.style.display = 'flex';
+                    // Positionierung zentriert über dem Punkt
+                    el.style.transform = `translate(${x}px, ${y + yOffset}px) translate(-50%, -100%) scale(${scale})`;
+                }
 
-        updatePos();
+                if (!el.classList.contains('visible')) {
+                    requestAnimationFrame(() => el.classList.add('visible'));
+                }
+
+                frameId = requestAnimationFrame(updatePos);
+            };
+
+            updatePos();
+        });
     }
 
     setAvatarImage(element, speakerName) {

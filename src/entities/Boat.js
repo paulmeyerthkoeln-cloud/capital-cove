@@ -212,8 +212,8 @@ class Boat {
         this.updateTechVisuals();
 
         let speed = 15;
-        if (this.type === 'row') speed = 10;
-        if (this.type === 'motor') speed = 18; // Etwas langsamer als ursprünglich, aber schneller als Ruderboot
+        if (this.type === 'row') speed = 15; // Erhöht von 10 auf 15 (1,5x schneller)
+        if (this.type === 'motor') speed = 21.6; // 20% schnelleres Motorboot
         if (this.type === 'trawler') speed = 20;
 
         const isCrisisMode = (economy.state.isSavingActive && economy.state.marketHealth < 0.2);

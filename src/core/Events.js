@@ -19,6 +19,7 @@ export const EVENTS = {
     CMD_SHOW_BOAT_HINT: 'cmd:show_boat_hint',
     CMD_RELEASE_BOATS: 'cmd:release_boats',
     CMD_SHOW_TENT: 'cmd:show_tent',
+    BANK_CONSTRUCTED: 'world:bank_constructed',
     UI_DIALOG_OPENED: 'ui:dialog_opened',
     UI_DIALOG_CLOSED: 'ui:dialog_closed',
     SAVINGS_CONFIRMED: 'ui:savings_confirmed',

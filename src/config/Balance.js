@@ -6,8 +6,8 @@ const MOTOR_CRATE_COUNT = MOTOR_REVENUE_TARGET / VALUE_PER_CRATE;
 const DREDGE_CRATE_COUNT = DREDGE_REVENUE_TARGET / VALUE_PER_CRATE;
 const TRAWLER_CRATE_COUNT = TRAWLER_REVENUE_TARGET / VALUE_PER_CRATE;
 
-const MOTOR_SHIPYARD_COST = 40;
-const MOTOR_TAVERN_COST = 30;
+const MOTOR_SHIPYARD_COST = 35;
+const MOTOR_TAVERN_COST = 25;
 const MOTOR_OPERATION_COST = MOTOR_SHIPYARD_COST + MOTOR_TAVERN_COST;
 
 const DREDGE_SHIPYARD_COST = 50;
@@ -105,9 +105,9 @@ export const BALANCE = {
             },
             MOTOR: {
                 SHIPYARD: MOTOR_SHIPYARD_COST,  // Wartung + Treibstoff (TEUER!)
-                TAVERN: MOTOR_TAVERN_COST,     // Verpflegung für größere Crew (GESAMT: 70g pro Fahrt!)
+                TAVERN: MOTOR_TAVERN_COST,     // Verpflegung für größere Crew (GESAMT: 60g pro Fahrt!)
                 TOTAL: MOTOR_OPERATION_COST,
-                // Total: 70g
+                // Total: 60g
             },
             DREDGE: {
                 SHIPYARD: DREDGE_SHIPYARD_COST,  // Höherer Verschleiß durch Winde

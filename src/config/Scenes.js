@@ -265,7 +265,7 @@ export const SCENE_DATA = {
         focus: 'right',
         cameraTarget: null,
         choices: [
-            { id: 'go_to_bank', text: 'Zur Bank gehen', action: 'go_to_sterling_bank' }
+            { id: 'go_to_bank', text: 'Zum Zelt gehen', action: 'go_to_sterling_bank' }
         ]
     },
 
@@ -442,7 +442,7 @@ export const SCENE_DATA = {
     'D4_INTEREST_SHOCK': {
         type: 'narrative',
         title: 'Die Abrechnung',
-        text: 'Lale: "Chef, wir verbrennen Geld! Das Motorboot bringt 20 Gold Gewinn pro Fahrt, aber Sterling zieht sofort 50 Gold Zinsen ein."\n\nSie schlägt die Seiten im Konto auf. "Somit vernichten wir 30 Gold. Der Kredit frisst uns auf, bevor wir eine zweite Fahrt machen können."',
+        text: 'Lale: "Chef, wir verbrennen Geld! Das Motorboot bringt 30 Gold Gewinn pro Fahrt, aber Sterling zieht sofort 50 Gold Zinsen ein."\n\nSie schlägt die Seiten im Konto auf. "Somit vernichten wir 20 Gold. Der Kredit frisst uns auf, bevor wir eine zweite Fahrt machen können."',
         speakerLeft: 'Lale',
         speakerRight: null,
         focus: 'left',
@@ -455,7 +455,7 @@ export const SCENE_DATA = {
     'D4_STERLING_ADVICE': {
         type: 'narrative',
         title: 'Kühle Rechnung',
-        text: 'Sterling: "Nicht emotional werden. Es ist eine einfache Rechenaufgabe: +20 Gold aus dem Motorboot, aber -50 Zinsen bedeuten pro Fahrt -30. So halten wir den Kredit nie." \n\nEr wandert zur Werft und streicht mit dem Finger über den Tisch. "Sie müssen den Output erhöhen. Kian hat da eine... effiziente Lösung."',
+        text: 'Sterling: "Nicht emotional werden. Es ist eine einfache Rechenaufgabe: +30 Gold aus dem Motorboot, aber -50 Zinsen bedeuten pro Fahrt -20. So halten wir den Kredit nie." \n\nEr wandert zur Werft und streicht mit dem Finger über den Tisch. "Sie müssen den Output erhöhen. Kian hat da eine... effiziente Lösung."',
         speakerLeft: null,
         speakerRight: 'Sterling',
         focus: 'right',
@@ -507,7 +507,7 @@ export const SCENE_DATA = {
     'D4_TO_D5_TRANSITION': {
         type: 'narrative',
         title: 'Rechnung geht nicht auf',
-        text: 'Sterling tritt ans Ufer und mustert dein Boot.\n\nSterling: "Das Motorboot bringt 20 Gold Gewinn, ich ziehe 50 Gold Zinsen ab. Sie verbrennen 30 Gold pro Fahrt. Sie tilgen so nie."\n\nEr lächelt kühl. "Sie brauchen das größere Boot. Sofort."',
+        text: 'Sterling tritt ans Ufer und mustert dein Boot.\n\nSterling: "Das Motorboot bringt 30 Gold Gewinn, ich ziehe 50 Gold Zinsen ab. Sie verbrennen 20 Gold pro Fahrt. Sie tilgen so nie."\n\nEr lächelt kühl. "Sie brauchen das größere Boot. Sofort."',
         speakerLeft: "Kapt'n",
         speakerRight: 'Sterling',
         focus: 'right',

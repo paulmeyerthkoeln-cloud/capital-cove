@@ -145,6 +145,7 @@ class Director {
         this.waitingForTutorialRelease = false;
         this.nextSceneOnBoatClick = null;
         this.tutorialObjectivesCompleted = false;
+        this.bankOfferTimeout = null;
     }
 
     init() {
@@ -161,6 +162,7 @@ class Director {
         events.on(EVENTS.UI_DIALOG_CLOSED, (data) => this.onDialogClosed(data));
         events.on(EVENTS.SAVINGS_CONFIRMED, (payload) => this.onSavingsConfirmed(payload));
         events.on(EVENTS.CYCLE_EXPLANATION_CLOSED, () => this.onCycleExplanationClosed());
+        events.on(EVENTS.BANK_CONSTRUCTED, () => this.onBankConstructed());
         events.on('ui:tavern_round_bought', () => {
             this.markObjectiveDone('buy_round');
             this.checkTutorialObjectives();
@@ -496,6 +498,7 @@ class Director {
         setTimeout(() => {
             // Pfeil über Bank weg
             events.emit(EVENTS.CMD_SHOW_BUILDING_HINT, { type: 'bank', show: false });
+            events.emit(EVENTS.CMD_SHOW_BUILDING_HINT, { type: 'bank_tent', show: false });
 
             // Pfeil über Werft an
             events.emit(EVENTS.CMD_SHOW_BUILDING_HINT, { type: 'shipyard', show: true });
@@ -603,6 +606,7 @@ class Director {
         else if (type === 'bank' || type === 'bank_tent') {
             // Pfeil über Bank deaktivieren beim Klick
             events.emit(EVENTS.CMD_SHOW_BUILDING_HINT, { type: 'bank', show: false });
+            events.emit(EVENTS.CMD_SHOW_BUILDING_HINT, { type: 'bank_tent', show: false });
 
             // Wenn Sterling den Spieler eingeladen hat (Kapitel 2 Start)
             if (this.flags.sterlingInvitationActive && !this.flags.hasTakenFirstLoan) {
@@ -611,9 +615,10 @@ class Director {
                 const bManager = window.game?.buildings;
                 if (bManager && type === 'bank_tent') {
                     bManager.constructBank();
-
-                    // NEU: Warten, damit man die Transformation sieht!
-                    await this.wait(1500);
+                    // Kurze Wartezeit, damit die Aufstellung sichtbar ist;
+                    // der Dialog startet automatisch nach Fertigstellung.
+                    await this.wait(1200);
+                    return;
                 }
 
                 // 2. Story-Szene starten (statt generischem Menü)
@@ -736,9 +741,9 @@ class Director {
 
         try {
             const getPayouts = () => {
-                // Trip 1 IMMER Basiswert 10/10, egal ob Schleppnetz schon existiert
+                // Trip 1 IMMER Basiswert 15/15, egal ob Schleppnetz schon existiert
                 if (tripIndex === 1) {
-                    return { paidMo: 10, paidKian: 10 };
+                    return { paidMo: 15, paidKian: 15 };
                 }
 
                 const hasDredge = (economy.state.tech.netType === 'dredge') || (director.flags?.dredgePurchased);
@@ -763,6 +768,9 @@ class Director {
                 events.emit('world:visual_effect', { type: 'RECOVER' });
                 events.emit(EVENTS.BUILDING_REACTION, { target: 'TAVERN', type: 'SUCCESS' });
                 events.emit(EVENTS.BUILDING_REACTION, { target: 'SHIPYARD', type: 'SUCCESS' });
+                economy.state.marketHealth = 1.0;
+                events.emit(ECON_EVENTS.MARKET_HEALTH_CHANGED, { health: economy.state.marketHealth });
+                economy.broadcastStats();
 
                 await this.wait(500);
 
@@ -773,7 +781,7 @@ class Director {
 
                 await this.wait(1500); // Warten bis Geld da ist
 
-                // 4. Einnahmen JETZT gutschreiben (+20G)
+                // 4. Einnahmen JETZT gutschreiben (+30G)
                 const { paidMo: pm1, paidKian: pk1 } = getPayouts();
                 const operatingProfit = pm1 + pk1;
 
@@ -1166,9 +1174,8 @@ class Director {
                 setTimeout(() => this.setIslandOverviewCamera(), 200);
                 await this.wait(1200);
 
-                // Gelber Pfeil und Hinweis direkt nach Sterling-Dialog
-                events.emit(EVENTS.CMD_SHOW_BUILDING_HINT, { type: 'bank', show: true });
-                ui.showPersistentHint('Geh zum Zelt (Sterling wartet)');
+                // Gelber Pfeil direkt nach Sterling-Dialog
+                events.emit(EVENTS.CMD_SHOW_BUILDING_HINT, { type: 'bank_tent', show: true });
 
                 this.triggerScene('D1_STERLING_DIRECTIVE');
                 break;
@@ -1317,9 +1324,11 @@ class Director {
                 economy.state.loanPrincipal = 500; // Neuer Kredit
                 economy.state.accruedInterest = 0; // Reset alter Zinsen
 
-                // 2. Visueller Reset
-                events.emit('world:update_visuals', { health: 1.0 });
-                events.emit('world:visual_effect', { type: 'RECOVER' });
+                // 2. Visueller Zustand aus Kapitel 3 beibehalten
+                economy.state.marketHealth = Math.min(economy.state.marketHealth, 0.35);
+                events.emit(ECON_EVENTS.MARKET_HEALTH_CHANGED, { health: economy.state.marketHealth });
+                economy.broadcastStats();
+                events.emit('world:visual_effect', { type: 'STALL' });
 
                 // 3. Phase setzen
                 this.setPhase('GROWTH_TRAP');
@@ -1713,8 +1722,8 @@ class Director {
                 setTimeout(() => {
                     this.triggerScene('D2_STERLING_INVITATION');
                     setTimeout(() => {
-                        events.emit(EVENTS.CMD_SHOW_BUILDING_HINT, { type: 'bank', show: true });
-                        events.emit(EVENTS.TOAST, { message: 'Gehe zur Bank und sprich mit Sterling!' });
+                        events.emit(EVENTS.CMD_SHOW_BUILDING_HINT, { type: 'bank_tent', show: true });
+                        events.emit(EVENTS.TOAST, { message: 'Gehe zum Zelt und sprich mit Sterling!' });
                     }, 100);
                 }, 1000);
             }, 1000);
@@ -1932,7 +1941,12 @@ class Director {
         let barkIcon = "📉";
         let speakerName = charKey === 'mo' ? 'Mo' : 'Kian';
 
-        if (tripType === 'TRIP_2') {
+        if (tripType === 'TRIP_1') {
+            if (charKey === 'mo') {
+                barkText = "Du hast an uns gespart – jetzt haben wir weniger Geld.";
+                barkIcon = "💸";
+            }
+        } else if (tripType === 'TRIP_2') {
             if (charKey === 'kian') {
                 barkText = "Kein Auftrag? Ich schicke die Jungs heim.";
                 barkIcon = "👋";
@@ -1941,7 +1955,6 @@ class Director {
                 barkIcon = "📉";
             }
         }
-        // Trip 1: Keine Barks (laut Anforderung)
         // Trip 3: Kian/Mo Barks entfernt (dafür Lale später)
 
         // Bark anzeigen (nur wenn Text definiert)
@@ -2896,6 +2909,19 @@ class Director {
         // Sterling-Logik wandert in onCycleExplanationClosed (nach neuem UI-Flow)
     }
 
+    onBankConstructed() {
+        if (!this.flags.sterlingInvitationActive || this.flags.hasTakenFirstLoan) return;
+
+        if (this.bankOfferTimeout) clearTimeout(this.bankOfferTimeout);
+
+        this.bankOfferTimeout = setTimeout(() => {
+            this.bankOfferTimeout = null;
+            if (this.flags.sterlingInvitationActive && !this.flags.hasTakenFirstLoan) {
+                this.triggerScene('D2_STERLING_OFFER');
+            }
+        }, 1200);
+    }
+
     // --- CRISIS SEQUENCE (Phase 1) ---
 
     // --- PHASE MANAGEMENT ---
@@ -2952,6 +2978,10 @@ class Director {
         this.isSceneActive = false;
         this.isIntroRunning = false;
         this.timers = { stagnationStartTime: null, lastStagnationToast: 0 };
+        if (this.bankOfferTimeout) {
+            clearTimeout(this.bankOfferTimeout);
+            this.bankOfferTimeout = null;
+        }
 
         input.setLocked(false);
         ui.hideCinematicLayer();
@@ -3058,8 +3088,8 @@ class Director {
                     this.triggerScene('D2_STERLING_INVITATION');
                     // Pfeil zur Bank aktivieren (nach Dialog-Close sichtbar)
                     setTimeout(() => {
-                        events.emit(EVENTS.CMD_SHOW_BUILDING_HINT, { type: 'bank', show: true });
-                        events.emit(EVENTS.TOAST, { message: 'Gehe zur Bank und sprich mit Sterling!' });
+                        events.emit(EVENTS.CMD_SHOW_BUILDING_HINT, { type: 'bank_tent', show: true });
+                        events.emit(EVENTS.TOAST, { message: 'Gehe zum Zelt und sprich mit Sterling!' });
                     }, 100);
                 }, 1000);
 
@@ -3159,7 +3189,7 @@ class Director {
                 economy.state.loanPrincipal = 500; // Schuldenlast
                 economy.state.accruedInterest = 0;
                 economy.state.tripsSinceLoan = 0;
-                economy.state.marketHealth = 1.0; // Welt ist "gerettet" (visuell)
+                economy.state.marketHealth = 0.35; // Start in grauer Stimmung
 
                 // Technik & Boote
                 economy.state.boatsRow = 0;
@@ -3168,6 +3198,7 @@ class Director {
                 economy.state.tech.netType = 'standard'; // Noch kein Schleppnetz!
 
                 economy.broadcastStats();
+                events.emit(ECON_EVENTS.MARKET_HEALTH_CHANGED, { health: economy.state.marketHealth });
 
                 // 3. Flags setzen
                 this.flags.hasMotorboat = true;

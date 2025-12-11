@@ -1221,6 +1221,7 @@ export class BuildingManager {
             { type: 'hq', group: this.hqGroup, height: 35 },
             { type: 'shipyard', group: this.shipyardGroup, height: 30 },
             { type: 'tavern', group: this.tavernGroup, height: 32 },
+            { type: 'bank_tent', group: this.tentGroup, height: 30 },
             { type: 'bank', group: this.bankGroup, height: 35 }
         ];
 
@@ -1340,6 +1341,7 @@ export class BuildingManager {
             sceneSetup.registerInteractable(this.bankGroup);
             this.spawnConstructionDust(this.bankGroup.position, 0xFFD700);
             events.emit(EVENTS.TOAST, { message: 'Die Bank wurde eröffnet!' });
+            events.emit(EVENTS.BANK_CONSTRUCTED, { position: this.bankGroup.position.clone() });
         }
     }
 
