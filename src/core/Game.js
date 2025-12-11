@@ -18,13 +18,18 @@ class Game {
     constructor() {
         this.isRunning = false;
         this.lastFrameTimeMs = 0;
-        
-        this.speedMultiplier = 1; 
-        
+
+        this.speedMultiplier = 1;
+
         this.tickLengthMs = 500;
         this.tickAccumulatorMs = 0;
         this.tickCount = 0;
-        
+
+        // OPTIMIERUNG: FPS-Limiter für sehr alte Tablets (standardmäßig deaktiviert)
+        // Setze z.B. auf 30 um auf 30 FPS zu limitieren: this.fpsLimit = 30
+        this.fpsLimit = null; // null = unbegrenzt
+        this.frameMinMs = this.fpsLimit ? 1000 / this.fpsLimit : 0;
+
         this.water = null;
         this.island = null;
         this.environment = null;
@@ -89,6 +94,12 @@ class Game {
         requestAnimationFrame((now) => this.animate(now));
 
         const deltaMs = nowMs - this.lastFrameTimeMs;
+
+        // OPTIMIERUNG: FPS-Limiter - Frame überspringen wenn zu früh
+        if (this.fpsLimit && deltaMs < this.frameMinMs) {
+            return; // Frame überspringen
+        }
+
         this.lastFrameTimeMs = nowMs;
 
         this.tickAccumulatorMs += deltaMs * this.speedMultiplier;

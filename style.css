@@ -121,25 +121,6 @@ body {
     background: var(--color-danger);
 }
 
-#phase-label {
-    position: absolute;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(44, 62, 80, 0.8);
-    color: white;
-    padding: 8px 25px;
-    border-radius: 20px;
-    font-weight: 600;
-    font-size: 0.9rem;
-    letter-spacing: 1px;
-    border: 1px solid rgba(255,255,255,0.1);
-    /* backdrop-filter: blur(4px); */
-    pointer-events: auto;
-    text-transform: uppercase;
-    z-index: var(--z-ui-stats);
-}
-
 #objective-panel {
     position: absolute;
     top: 90px;
@@ -483,43 +464,6 @@ body {
 .btn-toggle.running:hover {
     background: #2ecc71;
     transform: scale(1.02);
-}
-
-#speed-controls {
-    position: absolute;
-    bottom: 30px;
-    right: 30px;
-    display: flex;
-    gap: 5px;
-    background: rgba(255, 255, 255, 0.95) !important;
-    padding: 5px;
-    border-radius: 8px;
-    /* backdrop-filter: blur(5px); */
-    pointer-events: auto;
-    z-index: var(--z-ui-stats);
-}
-
-.btn-speed {
-    background: rgba(0, 0, 0, 0.5);
-    color: white;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    width: 36px;
-    height: 36px;
-    border-radius: 6px;
-    font-weight: bold;
-    font-family: monospace;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.btn-speed:hover {
-    background: rgba(255, 255, 255, 0.2);
-}
-
-.btn-speed.active {
-    background: var(--color-warning);
-    color: #1a1a1a;
-    border-color: var(--color-warning);
 }
 
 #dialog-overlay {

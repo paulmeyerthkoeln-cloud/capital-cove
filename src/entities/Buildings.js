@@ -6,6 +6,12 @@ import { events, EVENTS, DIRECTOR_EVENTS, ECON_EVENTS } from '../core/Events.js'
 import { game } from '../core/Game.js';
 import { economy } from '../logic/Economy.js';
 
+// PERFORMANCE-HINWEIS für Tablets:
+// Die Partikel-Arrays (particles, props) wachsen während des Spiels.
+// Object Pooling für Partikel würde Memory-Fragmentierung reduzieren:
+// Statt Partikel zu löschen (splice) und neu zu erstellen, könnten sie
+// in einem Pool recycelt werden. Dies reduziert Garbage Collection Mikro-Ruckler.
+
 export class BuildingManager {
     constructor() {
         this.buildings = [];

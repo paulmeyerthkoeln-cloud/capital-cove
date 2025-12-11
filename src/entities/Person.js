@@ -146,7 +146,7 @@ class Person {
         return -5;
     }
 
-    update(dt, time) {
+    update(dt, time, buildings = null) {
         if (!this.mesh) return;
 
         if (this.state === PERSON_STATE.WALKING && this.path.length) {
@@ -164,6 +164,11 @@ class Person {
             this.rightLegPivot.rotation.x = -cycle * 0.7;
             this.leftArmPivot.rotation.x = -cycle * 0.4;
             this.rightArmPivot.rotation.x = cycle * 0.4;
+
+            // Kollisionserkennung mit Gebäuden
+            if (buildings) {
+                this.checkBuildingCollision(buildings);
+            }
 
             if (dist < 0.6) {
                 if (this.pathIndex < this.path.length - 1) {
@@ -192,7 +197,48 @@ class Person {
             this.mesh.visible = true;
         }
     }
+
+    checkBuildingCollision(buildings) {
+        if (!this.mesh || !buildings) return;
+
+        const pos = this.mesh.position;
+        const collisionRadius = 2; // Radius um die Person
+
+        // Definiere Gebäude-Bounding-Boxen (ungefähre Positionen und Größen)
+        const buildingBounds = [
+            { name: 'tavern', group: buildings.tavernGroup, size: { x: 25, z: 20 } },
+            { name: 'shipyard', group: buildings.shipyardGroup, size: { x: 20, z: 25 } },
+            { name: 'hq', group: buildings.hqGroup, size: { x: 22, z: 22 } },
+            { name: 'bank', group: buildings.bankGroup, size: { x: 20, z: 20 } }
+        ];
+
+        for (const building of buildingBounds) {
+            if (!building.group) continue;
+
+            const bPos = building.group.position;
+            const halfX = building.size.x / 2;
+            const halfZ = building.size.z / 2;
+
+            // Prüfe ob Person innerhalb der Gebäude-Bounding-Box ist
+            if (pos.x >= bPos.x - halfX - collisionRadius &&
+                pos.x <= bPos.x + halfX + collisionRadius &&
+                pos.z >= bPos.z - halfZ - collisionRadius &&
+                pos.z <= bPos.z + halfZ + collisionRadius) {
+
+                // Person ist im Gebäude - lasse sie verschwinden
+                this.mesh.visible = false;
+                return;
+            }
+        }
+    }
 }
+
+// PERFORMANCE-HINWEIS für Tablets:
+// Object Pooling könnte hier die Garbage Collection reduzieren:
+// Statt Personen zu löschen und neu zu erstellen (new Person), könnten
+// inaktive Personen in einem Pool gespeichert und wiederverwendet werden.
+// Implementierung: Füge einen personPool[] Array hinzu und recycle() Methode.
+// Dies würde Mikro-Ruckler durch Garbage Collection bei langen Sessions reduzieren.
 
 export class PersonManager {
     constructor(buildings = null) {
@@ -237,10 +283,10 @@ export class PersonManager {
 
     getVisitorInterval() {
         const health = economy?.state?.marketHealth ?? 1.0;
-        if (health < 0.2) return 10 + Math.random() * 4;       // Geisterstadt, keine neuen Besucher
-        if (health < 0.5) return 10 + Math.random() * 6;       // Kaum Besucher
-        if (health >= 0.95) return 2 + Math.random() * 2;      // Viele Besucher
-        return 5 + Math.random() * 5;                          // Normal
+        if (health < 0.2) return 20 + Math.random() * 10;      // Geisterstadt, keine neuen Besucher
+        if (health < 0.5) return 15 + Math.random() * 10;      // Kaum Besucher
+        if (health >= 0.95) return 6 + Math.random() * 4;      // Viele Besucher (reduziert von 2-4 auf 6-10)
+        return 10 + Math.random() * 8;                         // Normal (reduziert von 5-10 auf 10-18)
     }
 
     setBuildings(buildings) {
@@ -262,7 +308,7 @@ export class PersonManager {
         return -5;
     }
 
-    clampToIsland(vec, maxRadius = 125) {
+    clampToIsland(vec, maxRadius = 95) {
         const v = vec.clone();
         const dist = Math.sqrt(v.x * v.x + v.z * v.z);
         if (dist > maxRadius && dist > 0.001) {
@@ -271,6 +317,10 @@ export class PersonManager {
             v.z *= t;
         }
         v.y = this.getGroundHeight(v.x, v.z);
+        // Sicherheitsprüfung: Falls unter Wasser, setze auf Plateau-Höhe
+        if (v.y < 0) {
+            v.y = 6.0;
+        }
         return v;
     }
 
@@ -287,16 +337,16 @@ export class PersonManager {
             plazaEast: this.clampToIsland(new THREE.Vector3(26, 0, 0)),
             plazaWest: this.clampToIsland(new THREE.Vector3(-26, 0, 0)),
             marketCorner: this.clampToIsland(new THREE.Vector3(-18, 0, 12)),
-            dock: this.clampToIsland(new THREE.Vector3(0, 0, 120)),
+            dock: this.clampToIsland(new THREE.Vector3(0, 0, 100)),
             shipyardFront: this.clampToIsland(shipyardPos.clone().add(new THREE.Vector3(0, 0, -18))),
             hqPorch: this.clampToIsland(hqPos.clone().add(new THREE.Vector3(0, 0, 18))),
             tavernPorch: this.clampToIsland(tavernPos.clone().add(new THREE.Vector3(12, 0, 8))),
             tavernExit: this.clampToIsland(tavernPos.clone().add(new THREE.Vector3(-10, 0, -14))),
             bankFront: this.clampToIsland(bankPos.clone().add(new THREE.Vector3(-12, 0, 6))),
-            westEntry: this.clampToIsland(new THREE.Vector3(-92, 0, -6)),
-            eastEntry: this.clampToIsland(new THREE.Vector3(92, 0, 8)),
-            northEntry: this.clampToIsland(new THREE.Vector3(-4, 0, -96)),
-            southEntry: this.clampToIsland(new THREE.Vector3(6, 0, 98))
+            westEntry: this.clampToIsland(new THREE.Vector3(-75, 0, -6)),
+            eastEntry: this.clampToIsland(new THREE.Vector3(75, 0, 8)),
+            northEntry: this.clampToIsland(new THREE.Vector3(-4, 0, -78)),
+            southEntry: this.clampToIsland(new THREE.Vector3(6, 0, 80))
         };
 
         this.defaultDock = this.navPoints.dock.clone();
@@ -366,7 +416,7 @@ export class PersonManager {
             this.visitorTimer = this.getVisitorInterval();
         }
 
-        this.people.forEach(p => p.update(dt, time));
+        this.people.forEach(p => p.update(dt, time, this.buildings));
 
         this.people.forEach(p => {
             if (p.behavior === 'visitor') {
@@ -514,7 +564,10 @@ export class PersonManager {
 
     randomRingPosition(inner, outer) {
         const angle = Math.random() * Math.PI * 2;
-        const r = inner + Math.random() * (outer - inner);
+        // Begrenze auf maximal 90 (sicher innerhalb der Insel, Radius < 100)
+        const safeOuter = Math.min(outer, 90);
+        const safeInner = Math.min(inner, 85);
+        const r = safeInner + Math.random() * (safeOuter - safeInner);
         return this.clampToIsland(new THREE.Vector3(Math.cos(angle) * r, 0, Math.sin(angle) * r));
     }
 

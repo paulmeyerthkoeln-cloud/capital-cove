@@ -17,7 +17,6 @@ export class UIManager {
             debt: null,
             fish: null,
             employment: null,
-            phaseLabel: null,
             
             // Standard Modal Dialog (Menüs)
             dialog: null,
@@ -35,7 +34,6 @@ export class UIManager {
 
             // Panels
             objectiveContainer: null,
-            speedContainer: null,
             collapseOverlay: null,
             crisisCardsContainer: null,
 
@@ -80,9 +78,6 @@ export class UIManager {
             // Cycle UI
             cycleOverlay: null,
             cycleCloseBtn: null,
-
-            // Debug
-            debugPanel: null,
         };
         this.moneyDeltaTimeout = null;
 
@@ -248,8 +243,6 @@ export class UIManager {
         this.injectDynamicStyles();
         this.createExtendedHUD();
         this.createObjectivePanel();
-        this.createSpeedControls();
-        this.createPhaseJumpControls();
         this.createCollapseOverlay();
 
         // --- Global Event Subscriptions ---
@@ -311,9 +304,6 @@ export class UIManager {
             .stat-bar-fill.success { background-color: var(--color-success); }
             .stat-bar-fill.warning { background-color: var(--color-warning); }
             .stat-bar-fill.danger { background-color: var(--color-danger); }
-            .debug-panel { position: absolute; top: 80px; right: 20px; display: flex; gap: 8px; flex-wrap: wrap; max-width: 280px; pointer-events: auto; z-index: 999; }
-            .debug-panel button { padding: 6px 10px; font-size: 0.8rem; border: 1px solid #ccc; background: rgba(255,255,255,0.9); border-radius: 6px; cursor: pointer; }
-            .debug-panel button:hover { background: #f5f5f5; }
             
             /* --- OPTIMIZED WORLD BARKS --- */
             .world-bark {
@@ -504,11 +494,6 @@ export class UIManager {
     }
 
     createExtendedHUD() {
-        this.elements.phaseLabel = document.createElement('div');
-        this.elements.phaseLabel.id = 'phase-label';
-        this.elements.phaseLabel.textContent = 'Lade...';
-        this.elements.uiLayer.appendChild(this.elements.phaseLabel);
-
         const statsPanel = document.getElementById('stats-panel');
         if (statsPanel) {
             const empItem = document.createElement('div');
@@ -531,75 +516,6 @@ export class UIManager {
         div.innerHTML = `<div style="font-size:0.75rem; opacity:0.7; font-weight:bold; margin-bottom:10px; text-transform:uppercase;">Ziele</div><div id="objective-list"></div>`;
         this.elements.uiLayer.appendChild(div);
         this.elements.objectiveContainer = div.querySelector('#objective-list');
-    }
-
-    createSpeedControls() {
-        const div = document.createElement('div');
-        div.id = 'speed-controls';
-        [1, 2, 3].forEach(speed => {
-            const btn = document.createElement('button');
-            btn.className = `btn-speed ${speed === 1 ? 'active' : ''}`;
-            btn.textContent = `${speed}x`;
-            btn.onclick = () => {
-                game.setSpeed(speed);
-                div.querySelectorAll('.btn-speed').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-            };
-            div.appendChild(btn);
-        });
-        this.elements.uiLayer.appendChild(div);
-        this.elements.speedContainer = div;
-    }
-
-    createPhaseJumpControls() {
-        const div = document.createElement('div');
-        div.className = 'debug-panel';
-        div.title = 'Test-Buttons: Wechselt direkt in Phasen';
-        const phases = [
-            { id: 'TUTORIAL', label: 'Kapitel 0' },
-            { id: 'STAGNATION', label: 'Kapitel 1' },
-            { id: 'BOOM', label: 'Kapitel 2' },
-            { id: 'CRUNCH', label: 'Kapitel 3' },
-            { id: 'GROWTH_TRAP', label: 'Kapitel 4' },
-            { id: 'EFFICIENCY', label: 'Kapitel 5' },
-            { id: 'CANNIBALIZATION', label: 'Kapitel 6' },
-            { id: 'COLLAPSE', label: 'Kapitel 7' }
-        ];
-        phases.forEach(phase => {
-            const btn = document.createElement('button');
-            btn.textContent = phase.label;
-            btn.onclick = () => director.debugJumpToPhase(phase.id);
-            div.appendChild(btn);
-        });
-        // Extra: Direkt in den "Kreislauf zerstört" Screen springen
-        const cycleBtn = document.createElement('button');
-        cycleBtn.textContent = 'Cycle zerstört';
-        cycleBtn.onclick = () => this.showCycleExplanation({ broken: true });
-        div.appendChild(cycleBtn);
-        // Extra: Gesundes Kreislauf-Fenster (Kapitel 0)
-        const cycleHealthyBtn = document.createElement('button');
-        cycleHealthyBtn.textContent = 'Cycle gesund';
-        cycleHealthyBtn.onclick = () => this.showCycleExplanation({ broken: false });
-        div.appendChild(cycleHealthyBtn);
-        // Extra: Test Boom Sequence
-        const boomBtn = document.createElement('button');
-        boomBtn.textContent = '🎬 TEST BOOM';
-        boomBtn.style.backgroundColor = '#ff6b00';
-        boomBtn.style.color = 'white';
-        boomBtn.onclick = () => {
-            console.log('🎬 [DEBUG] TEST BOOM Button geklickt!');
-            if (window.director) {
-                console.log('🎬 [DEBUG] Director gefunden, rufe playBoomSequence...');
-                window.director.playBoomSequence();
-            } else {
-                console.error('❌ [DEBUG] Director nicht gefunden!');
-                console.log('window.game:', window.game);
-                console.log('window.director:', window.director);
-            }
-        };
-        div.appendChild(boomBtn);
-        this.elements.uiLayer.appendChild(div);
-        this.elements.debugPanel = div;
     }
 
     createCollapseOverlay() {
@@ -668,9 +584,6 @@ export class UIManager {
     onPhaseChanged(data) {
         if (data?.phaseId) {
             this.visiblePhaseId = data.phaseId;
-        }
-        if (this.elements.phaseLabel) {
-            this.elements.phaseLabel.textContent = data.title;
         }
     }
 

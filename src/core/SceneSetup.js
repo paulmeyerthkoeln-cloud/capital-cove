@@ -32,8 +32,8 @@ class SceneSetup {
         this.camera.position.set(280, 180, 280); 
         this.camera.lookAt(0, 10, 0);
 
-        this.renderer = new THREE.WebGLRenderer({ 
-            antialias: true, 
+        this.renderer = new THREE.WebGLRenderer({
+            antialias: true, // OPTIMIERUNG: Bei Ruckeln auf alten iPads auf false setzen
             alpha: false, // Changed to false to show background color
             powerPreference: "high-performance"
         });
@@ -66,8 +66,9 @@ class SceneSetup {
         this.dirLight.position.set(-150, 200, 100);
         this.dirLight.castShadow = true;
 
-        this.dirLight.shadow.mapSize.width = 2048;
-        this.dirLight.shadow.mapSize.height = 2048;
+        // OPTIMIERUNG: Shadow Map auf 1024 reduziert für Tablets (war 2048)
+        this.dirLight.shadow.mapSize.width = 1024;
+        this.dirLight.shadow.mapSize.height = 1024;
         this.dirLight.shadow.camera.near = 0.5;
         this.dirLight.shadow.camera.far = 1000;
         
@@ -123,6 +124,8 @@ class SceneSetup {
 
     render() {
         if (this.renderer && this.scene && this.camera) {
+            // PERFORMANCE-HINWEIS: Frustum Culling ist automatisch aktiviert
+            // THREE.js rendert nur Objekte, die im Kamera-Sichtfeld sind
             this.renderer.render(this.scene, this.camera);
         }
     }

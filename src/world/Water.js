@@ -2,6 +2,14 @@ import * as THREE from 'three';
 import { sceneSetup } from '../core/SceneSetup.js';
 import { events, EVENTS, DIRECTOR_EVENTS } from '../core/Events.js';
 
+// PERFORMANCE-HINWEIS für Tablets:
+// Der Fragment Shader berechnet per-Pixel Simplex Noise (snoise) und Verzerrungen.
+// Da das Wasser fast den ganzen Bildschirm füllt, werden Millionen Pixel pro Frame berechnet.
+// Bei Überhitzung oder starkem Ruckeln können folgende Optimierungen helfen:
+// 1. Geometrie weiter reduzieren (z.B. auf 32x32 Segmente in init())
+// 2. Noise-Berechnungen im fragmentShader vereinfachen oder Frequenz reduzieren
+// 3. Wellen-Effekte zeitweise deaktivieren (waveStrength = 0)
+
 const noiseFunction = `
     vec3 permute(vec3 x) { return mod(((x*34.0)+1.0)*x, 289.0); }
     float snoise(vec2 v){

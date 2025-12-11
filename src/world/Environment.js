@@ -224,9 +224,9 @@ export class Environment {
     }
 
     createClouds() {
-        // We use SphereGeometry with low detail for a low-poly puffy look
-        // 7,7 segments gives a nice chunky sphere
-        const puffGeo = new THREE.SphereGeometry(1, 7, 7);
+        // OPTIMIERUNG: Sphere-Segmente von 7,7 auf 5,5 reduziert für Tablets
+        // Gibt immer noch einen schönen Low-Poly Look mit weniger Vertices
+        const puffGeo = new THREE.SphereGeometry(1, 5, 5);
         
         // Create 20 Cloud Clusters
         for(let i=0; i<20; i++) {
