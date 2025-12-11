@@ -328,7 +328,7 @@ export const SCENE_DATA = {
         speakerLeft: null,
         speakerRight: 'Mo',
         focus: 'right',
-        cameraTarget: 'TAVERN',
+        cameraTarget: null,
         choices: [
             { id: 'continue', text: 'Weiter so!', action: 'close' }
         ]
@@ -341,7 +341,7 @@ export const SCENE_DATA = {
         speakerLeft: null,
         speakerRight: 'Kian',
         focus: 'right',
-        cameraTarget: 'SHIPYARD',
+        cameraTarget: null,
         choices: [
             { id: 'continue', text: 'Ausgezeichnet', action: 'close' }
         ]

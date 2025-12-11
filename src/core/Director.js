@@ -146,6 +146,7 @@ class Director {
         this.nextSceneOnBoatClick = null;
         this.tutorialObjectivesCompleted = false;
         this.bankOfferTimeout = null;
+        this.tutorialTavernHintTimer = null;
     }
 
     init() {
@@ -165,6 +166,11 @@ class Director {
         events.on(EVENTS.BANK_CONSTRUCTED, () => this.onBankConstructed());
         events.on('ui:tavern_round_bought', () => {
             this.markObjectiveDone('buy_round');
+            events.emit(EVENTS.CMD_SHOW_BUILDING_HINT, { type: 'tavern', show: false });
+            if (this.tutorialTavernHintTimer) {
+                clearTimeout(this.tutorialTavernHintTimer);
+                this.tutorialTavernHintTimer = null;
+            }
             this.checkTutorialObjectives();
         });
 
@@ -723,6 +729,10 @@ class Director {
             icon: '🚤'
         });
 
+        // Boot wirklich erst nach Kians Ansage freigeben
+        await this.wait(800);
+        if (bm) bm.finishMotorBoatConstruction(0);
+
         // 9. ABSCHLUSS
         console.log("🎬 [BOOM] Sequenz fertig. Kamera Reset.");
 
@@ -1018,14 +1028,16 @@ class Director {
                 events.emit('world:update_visuals', { health: 0.75 });
                 economy.state.fishStock = Math.max(0, economy.state.fishStock - (BALANCE.ECOLOGY.MAX_FISH_STOCK * 0.13));
                 economy.broadcastStats();
-                events.emit(EVENTS.SHOW_WORLD_BARK, {
-                    targetId: 'boat',
-                    speaker: 'Bootsmann',
-                    text: "Das Wasser wird merklich trüber, Kapitän...",
-                    icon: '🌊',
-                    isCrisis: true
-                });
-                await this.wait(4000);
+                if (this.currentPhaseId !== 'EFFICIENCY') {
+                    events.emit(EVENTS.SHOW_WORLD_BARK, {
+                        targetId: 'boat',
+                        speaker: 'Bootsmann',
+                        text: "Das Wasser wird merklich trüber, Kapitän...",
+                        icon: '🌊',
+                        isCrisis: true
+                    });
+                    await this.wait(4000);
+                }
             }
             else if (tripIndex === 3) {
                 // Trip 3: Deutliche Verschlechterung (13% Abbau, total 38%)
@@ -1074,14 +1086,16 @@ class Director {
                 events.emit('world:update_visuals', { health: 0.25 });
                 economy.state.fishStock = Math.max(0, economy.state.fishStock - (BALANCE.ECOLOGY.MAX_FISH_STOCK * 0.12));
                 economy.broadcastStats();
-                events.emit(EVENTS.SHOW_WORLD_BARK, {
-                    targetId: 'boat',
-                    speaker: 'Bootsmann',
-                    text: "Kapitän, wir fangen hauptsächlich Algen und Dreck...",
-                    icon: '🌿',
-                    isCrisis: true
-                });
-                await this.wait(4000);
+                if (this.currentPhaseId !== 'EFFICIENCY') {
+                    events.emit(EVENTS.SHOW_WORLD_BARK, {
+                        targetId: 'boat',
+                        speaker: 'Bootsmann',
+                        text: "Kapitän, wir fangen hauptsächlich Algen und Dreck...",
+                        icon: '🌿',
+                        isCrisis: true
+                    });
+                    await this.wait(4000);
+                }
             }
             else if (tripIndex === 7) {
                 // Trip 7: Kurz vor Kollaps (12% Abbau, total 87%)
@@ -2050,7 +2064,7 @@ class Director {
             events.emit(EVENTS.SHOW_WORLD_BARK, {
                 targetId: 'boat',
                 speaker: "Kapt'n",
-                text: "Kredit gezahlt, Kasse leer. Kosten runter.",
+                text: "Ich bin weniger liquide und muss die Kosten kürzen.",
                 icon: '⚓',
                 isCrisis: false
             });
@@ -2929,6 +2943,12 @@ class Director {
         this.currentPhaseId = phaseId;
         this.activeObjectives = JSON.parse(JSON.stringify(PHASES[phaseId].objectives));
 
+        // Reminder-Timer für Tutorial zurücksetzen
+        if (this.tutorialTavernHintTimer) {
+            clearTimeout(this.tutorialTavernHintTimer);
+            this.tutorialTavernHintTimer = null;
+        }
+
         // Reset Phase-spezifische Flags und Zähler
         if (phaseId === 'STAGNATION') {
             this.flags.isSaving = false;
@@ -2939,6 +2959,17 @@ class Director {
             this.boomProfitableTrips = 0;
             this.boomProgressShown = false;
             this.boomWarningShown = false;
+        }
+
+        if (phaseId === 'TUTORIAL') {
+            // Nach kurzer Zeit dezenten Hinweis auf Mo zeigen, falls keine Runde ausgegeben wurde
+            this.tutorialTavernHintTimer = setTimeout(() => {
+                if (this.currentPhaseId !== 'TUTORIAL') return;
+                const obj = this.activeObjectives.find(o => o.id === 'buy_round');
+                if (obj && obj.done) return;
+                events.emit(EVENTS.CMD_SHOW_BUILDING_HINT, { type: 'tavern', show: true });
+                events.emit(EVENTS.TOAST, { message: 'Gib eine Runde im Lustigen Lachs aus!' });
+            }, 20000); // 20 Sekunden
         }
 
         events.emit(DIRECTOR_EVENTS.PHASE_CHANGED, {
@@ -2978,6 +3009,10 @@ class Director {
         if (this.bankOfferTimeout) {
             clearTimeout(this.bankOfferTimeout);
             this.bankOfferTimeout = null;
+        }
+        if (this.tutorialTavernHintTimer) {
+            clearTimeout(this.tutorialTavernHintTimer);
+            this.tutorialTavernHintTimer = null;
         }
 
         input.setLocked(false);

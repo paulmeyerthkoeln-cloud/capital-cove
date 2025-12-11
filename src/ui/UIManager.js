@@ -543,11 +543,10 @@ export class UIManager {
         const div = document.createElement('div');
         div.id = 'collapse-overlay';
         div.innerHTML = `
-            <h1 style="font-size: 4rem; margin-bottom: 20px; color: #e74c3c;">SYSTEMKOLLAPS</h1>
-            <p style="font-size: 1.5rem; max-width: 600px; text-align: center; margin-bottom: 40px;">
-                Die natürlichen Ressourcen sind erschöpft. Die Wirtschaft ist zusammengebrochen.
+            <h1 style="font-size: 3rem; margin-bottom: 18px; color: #c0392b;">Spiel vorbei</h1>
+            <p style="font-size: 1.2rem; max-width: 600px; text-align: center; margin-bottom: 32px; color:#2c3e50;">
+                Die Ressourcen sind erschöpft und die Inselwirtschaft kommt zum Stillstand. Versuch es noch einmal – vielleicht mit einem anderen Kurs.
             </p>
-            <button class="btn btn-primary" onclick="location.reload()">Neustart</button>
         `;
         this.elements.uiLayer.appendChild(div);
         this.elements.collapseOverlay = div;
@@ -669,6 +668,11 @@ export class UIManager {
 
     renderNarrativeScene(data) {
         if (!this.elements.narrativeScene) return;
+
+        // Schließe offenen Gebäudedialog automatisch, wenn Sprechblase geöffnet wird
+        if (this.dialogOpen && this.elements.dialog && !this.elements.dialog.classList.contains('hidden')) {
+            this.hideDialog();
+        }
 
         // 1. Text setzen
         this.elements.narrativeText.textContent = data.text;
