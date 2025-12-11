@@ -408,11 +408,14 @@ processFishingTrip(boatType) {
     }
 
     // Spezialfall Stagnation Skript (Kapitel 1)
+    let isSavingMo = false;
+    let isSavingKian = false;
+
     if (isStagnationMode) {
         const config = this.state.savingsConfig || {};
-        const isSavingMo = config.tavernLevel === 'basic';
-        const isSavingKian = config.shipyardLevel === 'basic';
-        
+        isSavingMo = config.tavernLevel === 'basic';
+        isSavingKian = config.shipyardLevel === 'basic';
+
         if (this.savingsTripCounter === 1) { acceptedMo = 3; acceptedKian = 2; } // Noch normal
         else if (this.savingsTripCounter === 2) { 
             // Cross-Effect: Wer spart, kauft beim anderen nicht
@@ -502,12 +505,14 @@ processFishingTrip(boatType) {
             mo: {
                 revenue: revenueMo,
                 cost: costTavern,
-                paid: paidToTavern
+                paid: paidToTavern,
+                isSaving: isSavingMo
             },
             kian: {
                 revenue: revenueKian,
                 cost: costShipyard,
-                paid: paidToShipyard
+                paid: paidToShipyard,
+                isSaving: isSavingKian
             }
         },
 

@@ -132,6 +132,9 @@ export class UIManager {
         this.sterlingTimeout = null;
         // Start mit Default, wird über DIRECTOR_EVENTS.PHASE_CHANGED aktualisiert
         this.visiblePhaseId = 'TUTORIAL';
+
+        // Wake Lock für Display-Aktivierung
+        this.wakeLock = null;
     }
 
     init() {
@@ -206,6 +209,22 @@ export class UIManager {
         if (this.elements.cycleCloseBtn) {
             this.elements.cycleCloseBtn.onclick = () => this.hideCycleExplanation();
         }
+
+        // Fullscreen Button
+        this.elements.fullscreenBtn = document.getElementById('fullscreen-btn');
+        if (this.elements.fullscreenBtn) {
+            this.elements.fullscreenBtn.onclick = () => this.toggleFullscreen();
+        }
+
+        // Wake Lock aktivieren wenn Spiel startet
+        this.requestWakeLock();
+
+        // Wake Lock bei Visibility-Änderungen neu aktivieren
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden && this.wakeLock === null) {
+                this.requestWakeLock();
+            }
+        });
 
         // --- Event Listeners ---
 
@@ -3059,6 +3078,51 @@ export class UIManager {
         element.textContent = '';
         const path = this.avatars[speakerName] || this.avatars['default'];
         element.style.backgroundImage = `url('${path}')`;
+    }
+
+    toggleFullscreen() {
+        if (!document.fullscreenElement) {
+            // Enter fullscreen
+            document.documentElement.requestFullscreen().catch(err => {
+                console.warn('Fullscreen request failed:', err);
+            });
+        } else {
+            // Exit fullscreen
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            }
+        }
+    }
+
+    async requestWakeLock() {
+        // Prüfen ob Wake Lock API verfügbar ist (hauptsächlich für mobile Geräte)
+        if ('wakeLock' in navigator) {
+            try {
+                this.wakeLock = await navigator.wakeLock.request('screen');
+                console.log('Wake Lock aktiviert - Display bleibt an');
+
+                // Event Listener für Wake Lock Release
+                this.wakeLock.addEventListener('release', () => {
+                    console.log('Wake Lock wurde freigegeben');
+                    this.wakeLock = null;
+                });
+            } catch (err) {
+                // Wake Lock kann fehlschlagen wenn Tab nicht aktiv ist
+                console.warn('Wake Lock konnte nicht aktiviert werden:', err.message);
+            }
+        } else {
+            console.log('Wake Lock API nicht verfügbar in diesem Browser');
+        }
+    }
+
+    releaseWakeLock() {
+        if (this.wakeLock !== null) {
+            this.wakeLock.release()
+                .then(() => {
+                    this.wakeLock = null;
+                    console.log('Wake Lock manuell freigegeben');
+                });
+        }
     }
 }
 

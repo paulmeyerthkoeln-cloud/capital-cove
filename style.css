@@ -121,6 +121,42 @@ body {
     background: var(--color-danger);
 }
 
+/* Fullscreen Button */
+.fullscreen-btn {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    width: 48px;
+    height: 48px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(255,255,255,0.5);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: auto;
+    transition: all 0.3s;
+    z-index: var(--z-ui-stats);
+}
+
+.fullscreen-btn:hover {
+    background: rgba(255, 255, 255, 1);
+    transform: scale(1.05);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+}
+
+.fullscreen-btn:active {
+    transform: scale(0.95);
+}
+
+.fullscreen-icon {
+    font-size: 1.5rem;
+    color: var(--color-dark);
+    line-height: 1;
+}
+
 #objective-panel {
     position: absolute;
     top: 90px;
@@ -1734,7 +1770,7 @@ body {
 
 .cycle-paper {
     background: #fdfbf7;
-    width: 600px; /* Etwas breiter für das Dreieck */
+    width: min(90vw, 650px); /* Responsive Breite für Tablet-Querformat */
     padding: 30px 40px;
     border-radius: 4px;
     box-shadow: 0 20px 60px rgba(0,0,0,0.5);
@@ -2238,8 +2274,12 @@ body {
 
 .cycle-paper {
     background: #fff;
-    width: 650px;
-    height: 720px; /* Fixe Gesamthöhe erhöht für Stabilität */
+    width: min(90vw, 650px);
+    max-height: 90vh;          /* Sicherer Fit auf Tablet-Höhe */
+    min-height: 620px;         /* Genug Raum für Inhalt */
+    height: auto;
+    overflow: auto;            /* Scrollbar erlauben, falls der Viewport kleiner wird */
+    padding-bottom: 120px;     /* Platz lassen, damit der sticky Footer nichts überdeckt */
     padding: 30px 40px;
     border-radius: 2px;
     box-shadow: 0 10px 40px rgba(0,0,0,0.5);
@@ -2310,7 +2350,33 @@ body {
     justify-content: space-between;
     align-items: center;
     width: 100%;
-    padding: 0 10px;
+    padding: 12px 10px;
+    position: sticky;
+    bottom: 0;
+    background: transparent;
+    border-top: none;
+    box-shadow: none;
+    z-index: 2;
+}
+
+@media (max-height: 820px) {
+    .cycle-paper {
+        padding: 20px 28px;
+        min-height: 560px;
+        max-height: 88vh;
+    }
+    .cycle-diagram {
+        height: 280px;
+        flex: 0 0 280px;
+    }
+    .cycle-text-area {
+        height: 140px;
+        flex: 0 0 140px;
+    }
+    .btn-cycle {
+        padding: 10px 18px;
+        font-size: 0.9rem;
+    }
 }
 
 /* --- DIAGRAMM BEREICH (FIXIERT AUF SVG KOORDINATEN) --- */

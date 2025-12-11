@@ -1174,9 +1174,6 @@ class Director {
                 setTimeout(() => this.setIslandOverviewCamera(), 200);
                 await this.wait(1200);
 
-                // Gelber Pfeil direkt nach Sterling-Dialog
-                events.emit(EVENTS.CMD_SHOW_BUILDING_HINT, { type: 'bank_tent', show: true });
-
                 this.triggerScene('D1_STERLING_DIRECTIVE');
                 break;
 
@@ -2580,8 +2577,7 @@ class Director {
         // Abschluss-Logik
         await this.wait(1000);
 
-        // WICHTIG: Kamera zurücksetzen!
-        this.setIslandOverviewCamera();
+        // Kamera-Bewegung bei Sterling-Advisor entfernt (bleibt in aktueller Position)
 
         if (tripNumber === 1) {
             events.emit(EVENTS.SHOW_ADVISOR, { text: "Die Kosten sinken. Das ist der Weg.", duration: 4000 });
@@ -2704,34 +2700,35 @@ class Director {
 
     // --- ÜBERARBEITET: Dynamische Texte basierend auf Spar-Entscheidung ---
     getBarkForTrip(character, tripNum, isSavingOnThisChar) {
+        const isSaving = !!isSavingOnThisChar;
 
         // Definition der Dialoge: [0]=Sparen (Negativ), [1]=Ausgeben (Positiv/Normal)
         const barks = {
             mo: {
                 1: [
-                    { text: "Rationen dünn wie Wasser. Ich kaufe, aber die Crew murrt.", icon: "😐" },
+                    { text: "Ich nehme alles, aber du hast die Rationen runtergedreht. Crew fragt, wo das Geld bleibt.", icon: "😐" },
                     { text: "Volle Schüsseln. Stimmung passt, ich nehme meinen Anteil.", icon: "🍲" }
                 ],
                 2: [
-                    { text: "Du kürzt alles? Werftarbeiter bleiben weg. Weniger Gäste, weniger Fisch.", icon: "📉" },
+                    { text: "Dein Sparkurs trifft uns. Werftcrew bleibt weg, mein Gastraum auch.", icon: "📉" },
                     { text: "Du fütterst mich, aber das Dorf spart. Gastraum halb leer, ich nehme weniger.", icon: "🤔" }
                 ],
                 3: [
-                    { text: "Kasse leer dank Sparkurs. Keine Abnahme mehr.", icon: "🚫" },
+                    { text: "Deine Kürzungen haben uns ausgetrocknet. Keine Gäste, keine Abnahme.", icon: "🚫" },
                     { text: "Essen gut, aber niemand hat Geld. Ich kaufe nichts.", icon: "💸" }
                 ]
             },
             kian: {
                 1: [
-                    { text: "Nur Flicken? Das rächt sich. Ich nehme meinen Anteil, aber knurrend.", icon: "😠" },
+                    { text: "Ich kaufe alles, aber du drehst mir das Wartungsbudget zu. Die Jungs merken's.", icon: "😠" },
                     { text: "Saubere Wartung. Boot hält, ich nehme meinen Anteil.", icon: "🔧" }
                 ],
                 2: [
-                    { text: "Kosten runter, Aufträge weg. Leute heim, ich nehme weniger.", icon: "⚠️" },
+                    { text: "Du drückst meine Kosten, ich verliere Kunden. Weniger Aufträge, weniger Kauf.", icon: "⚠️" },
                     { text: "Boot ok, aber alle sparen. Nachfrage bricht ein, ich kaufe weniger.", icon: "📉" }
                 ],
                 3: [
-                    { text: "Sparkurs trocknet mich aus. Kein Umsatz, kein Lohn.", icon: "🔒" },
+                    { text: "Dein Sparkurs legt mich lahm. Kein Umsatz, kein Lohn.", icon: "🔒" },
                     { text: "Premium hin oder her – Markt tot. Ich bin raus.", icon: "🚫" }
                 ]
             }
