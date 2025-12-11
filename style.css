@@ -2906,3 +2906,172 @@ body {
 #persistent-warning.neutral-hint .warning-icon {
     display: none;
 }
+
+/* =========================================================================
+   MOBILE & TABLET OPTIMIZATIONS
+   ========================================================================= */
+
+/* Touch-optimierte Button-Größen für kleinere Bildschirme */
+@media (max-width: 768px) {
+    /* Größere Touch-Targets für Buttons */
+    .btn {
+        padding: 16px 28px;
+        font-size: 1rem;
+        min-height: 48px;
+    }
+
+    .btn-action {
+        padding: 14px 24px;
+        font-size: 1rem;
+        min-height: 48px;
+    }
+
+    .menu-btn {
+        padding: 20px;
+        min-height: 60px;
+    }
+
+    /* Größere Stats für bessere Lesbarkeit */
+    #stats-panel {
+        padding: 15px 20px;
+        gap: 15px;
+    }
+
+    .stat-item {
+        font-size: 1rem;
+        padding: 8px 12px;
+    }
+
+    .stat-item .icon {
+        font-size: 1.5rem;
+    }
+
+    /* Fullscreen Button größer machen */
+    .fullscreen-btn {
+        width: 50px !important;
+        height: 50px !important;
+        font-size: 1.5rem !important;
+    }
+
+    /* Dialog-Boxen optimieren */
+    .dialog-box {
+        max-width: 90vw;
+        max-height: 85vh;
+        padding: 25px;
+    }
+
+    /* Narrative Scene optimieren */
+    .speech-bubble {
+        padding: 25px;
+        font-size: 1.1rem;
+        max-width: 85vw;
+    }
+
+    #narrative-speaker-name {
+        font-size: 1.3rem;
+    }
+
+    /* Charakter-Slots für Touch optimieren */
+    .char-slot {
+        width: 140px;
+        height: 140px;
+    }
+
+    /* Close-Buttons größer für Touch */
+    #dialog-close-btn {
+        width: 44px;
+        height: 44px;
+        font-size: 1.5rem;
+    }
+}
+
+/* Sehr kleine Bildschirme (Smartphones) */
+@media (max-width: 480px) {
+    /* Stats platzsparender anordnen */
+    #stats-panel {
+        flex-direction: column;
+        gap: 8px;
+        padding: 12px;
+        top: 10px;
+        right: 10px;
+    }
+
+    .stat-item {
+        font-size: 0.9rem;
+        padding: 6px 10px;
+    }
+
+    /* Buttons kompakter */
+    .btn {
+        padding: 14px 20px;
+        font-size: 0.9rem;
+    }
+
+    .btn-action {
+        padding: 12px 20px;
+        font-size: 0.9rem;
+    }
+
+    /* Dialog breiter nutzen */
+    .dialog-box {
+        max-width: 95vw;
+        padding: 20px;
+    }
+
+    /* Narrative kleinere Charaktere */
+    .char-slot {
+        width: 100px;
+        height: 100px;
+    }
+
+    .speech-bubble {
+        padding: 20px;
+        font-size: 1rem;
+    }
+}
+
+/* Landscape-Modus für Tablets optimieren */
+@media (max-width: 1024px) and (orientation: landscape) {
+    /* Stats Panel kompakter im Landscape */
+    #stats-panel {
+        padding: 10px 15px;
+        gap: 12px;
+    }
+
+    .stat-item {
+        font-size: 0.95rem;
+    }
+
+    /* Dialoge nicht zu hoch */
+    .dialog-box,
+    .speech-bubble {
+        max-height: 70vh;
+    }
+}
+
+/* Hover-Effekte auf Touch-Geräten deaktivieren */
+@media (hover: none) {
+    .btn:hover,
+    .btn-action:hover,
+    .menu-btn:hover {
+        transform: none;
+        filter: none;
+    }
+
+    /* Stattdessen :active für Touch-Feedback */
+    .btn:active,
+    .btn-action:active,
+    .menu-btn:active {
+        transform: scale(0.95);
+        opacity: 0.9;
+    }
+}
+
+/* High-DPI Displays (Retina, etc.) */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    /* Schärfere Schriftdarstellung */
+    body {
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+}

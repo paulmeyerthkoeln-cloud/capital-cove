@@ -216,6 +216,9 @@ export class UIManager {
             this.elements.fullscreenBtn.onclick = () => this.toggleFullscreen();
         }
 
+        // iOS Fullscreen-Hinweis prüfen
+        this.checkiOSFullscreenSupport();
+
         // Wake Lock aktivieren wenn Spiel startet
         this.requestWakeLock();
 
@@ -3084,16 +3087,60 @@ export class UIManager {
         element.style.backgroundImage = `url('${path}')`;
     }
 
+    checkiOSFullscreenSupport() {
+        // Prüfen ob iOS und nicht im Standalone-Modus
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        const isInStandaloneMode = ('standalone' in window.navigator) && window.navigator.standalone;
+
+        if (isIOS && !isInStandaloneMode) {
+            // Verstecke Fullscreen-Button auf iOS wenn nicht als Web-App installiert
+            // da der normale Fullscreen-API auf iOS Safari nicht funktioniert
+            if (this.elements.fullscreenBtn) {
+                this.elements.fullscreenBtn.style.display = 'none';
+            }
+        }
+    }
+
     toggleFullscreen() {
-        if (!document.fullscreenElement) {
-            // Enter fullscreen
-            document.documentElement.requestFullscreen().catch(err => {
-                console.warn('Fullscreen request failed:', err);
-            });
+        const elem = document.documentElement;
+
+        // Prüfen ob wir bereits im Fullscreen sind
+        const isFullscreen = document.fullscreenElement
+            || document.webkitFullscreenElement
+            || document.mozFullScreenElement
+            || document.msFullscreenElement;
+
+        if (!isFullscreen) {
+            // Enter fullscreen mit Browser-Präfixen für bessere Kompatibilität
+            if (elem.requestFullscreen) {
+                elem.requestFullscreen().catch(err => {
+                    console.warn('Fullscreen request failed:', err);
+                    this.showToast('Vollbild auf diesem Gerät nicht verfügbar', 'warning');
+                });
+            } else if (elem.webkitRequestFullscreen) {
+                // Safari/iOS
+                elem.webkitRequestFullscreen();
+            } else if (elem.mozRequestFullScreen) {
+                // Firefox
+                elem.mozRequestFullScreen();
+            } else if (elem.msRequestFullscreen) {
+                // IE/Edge
+                elem.msRequestFullscreen();
+            } else {
+                // Fallback für Geräte ohne Fullscreen-Support
+                console.warn('Fullscreen API not supported on this device');
+                this.showToast('Vollbild wird auf diesem Gerät nicht unterstützt', 'warning');
+            }
         } else {
             // Exit fullscreen
             if (document.exitFullscreen) {
                 document.exitFullscreen();
+            } else if (document.webkitExitFullscreen) {
+                document.webkitExitFullscreen();
+            } else if (document.mozCancelFullScreen) {
+                document.mozCancelFullScreen();
+            } else if (document.msExitFullscreen) {
+                document.msExitFullscreen();
             }
         }
     }
