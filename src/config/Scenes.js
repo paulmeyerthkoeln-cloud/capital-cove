@@ -23,7 +23,7 @@ export const SCENE_DATA = {
     'D0_MARKET_ARRIVED': {
         type: 'narrative',
         title: 'Volle Netze',
-        text: 'Das Boot liegt tief im Wasser. 50 Prachtexemplare zappeln im Laderaum. Die Dorfbewohner werden bereits aufmerksam.',
+        text: 'Das Boot liegt tief im Wasser. 20 Prachtexemplare zappeln im Laderaum. Die Dorfbewohner werden bereits aufmerksam.',
         speakerLeft: "Kapt'n",
         speakerRight: null,
         focus: 'left',
@@ -41,7 +41,7 @@ export const SCENE_DATA = {
     'D0_INCOME_MO': {
         type: 'narrative',
         title: 'Frischer Fang',
-        text: 'Mo: "Ahoi! Die Küche in der Taverne ist leer. Ich nehme dir den Großteil des Fangs für 30 Gold ab. Meine Gäste haben Hunger!"',
+        text: 'Ahoi! Die Küche in der Taverne ist leer. Ich nehme dir den Großteil des Fangs für 30 Gold ab. Meine Gäste haben Hunger!',
         speakerLeft: 'Mo',
         speakerRight: null,
         focus: 'left',
@@ -60,7 +60,7 @@ export const SCENE_DATA = {
     'D0_INCOME_KIAN': {
         type: 'narrative',
         title: 'Privatbedarf',
-        text: 'Kian: "Nicht so schnell. Ich brauche auch Fisch für mich und meine Familie. Ich nehme den Rest für 20 Gold."',
+        text: 'Nicht so schnell. Ich brauche auch Fisch für mich und meine Familie. Ich nehme den Rest für 20 Gold.',
         speakerLeft: 'Mo',
         speakerRight: 'Kian',
         focus: 'right',
@@ -80,7 +80,7 @@ export const SCENE_DATA = {
     'D0_REPAIR_REQUEST': {
         type: 'narrative',
         title: 'Schaden am Rumpf',
-        text: 'Bootsmann: "Kapitän, wir hatten Grundberührung beim Anlegen. Eine Planke ist locker. So können wir nicht wieder raus."',
+        text: 'Kapitän, wir hatten Grundberührung beim Anlegen. Eine Planke ist locker. So können wir nicht wieder raus.',
         speakerLeft: 'Bootsmann',
         speakerRight: null,
         focus: 'left',
@@ -93,7 +93,7 @@ export const SCENE_DATA = {
     'D0_REPAIR_OFFER': {
         type: 'narrative',
         title: 'Die Werft',
-        text: 'Kian: "Das sieht übel aus. Für 30 Gold mache ich das sofort dicht. Ich brauche das Geld, um neues Holz zu bestellen."',
+        text: 'Das sieht übel aus. Für 30 Gold mache ich das sofort dicht. Ich brauche das Geld, um neues Holz zu bestellen.',
         speakerLeft: 'Bootsmann',
         speakerRight: 'Kian',
         focus: 'right',
@@ -113,7 +113,7 @@ export const SCENE_DATA = {
     'D0_FOOD_REQUEST': {
         type: 'narrative',
         title: 'Knurrende Mägen',
-        text: 'Bootsmann: "Das Boot ist dicht, aber die Mannschaft verhungert. Wir brauchen Kraft für die nächste Fahrt."',
+        text: 'Das Boot ist dicht, aber die Mannschaft verhungert. Wir brauchen Kraft für die nächste Fahrt.',
         speakerLeft: 'Bootsmann',
         speakerRight: null,
         focus: 'left',
@@ -126,7 +126,7 @@ export const SCENE_DATA = {
     'D0_FOOD_OFFER': {
         type: 'narrative',
         title: 'Die Taverne',
-        text: 'Mo: "Der Eintopf dampft schon! Für 20 Gold mache ich alle satt. Das Geld brauche ich dringend für neue Gewürze vom Festland."',
+        text: 'Der Eintopf dampft schon! Für 20 Gold mache ich alle satt. Das Geld brauche ich dringend für neue Gewürze vom Festland.',
         speakerLeft: 'Bootsmann',
         speakerRight: 'Mo',
         focus: 'right',
@@ -146,7 +146,7 @@ export const SCENE_DATA = {
     'D0_SUMMARY': {
         type: 'narrative',
         title: 'Die Bilanz',
-        text: 'Lale: "Sieh auf dein Gold. Du hast 50 eingenommen und 50 ausgegeben. Du bist wieder bei 100. Nichts gewonnen, nichts verloren. Aber alle haben gelebt."',
+        text: 'Sieh auf dein Gold. Du hast 50 eingenommen und 50 ausgegeben. Du bist wieder bei 100. Nichts gewonnen, nichts verloren. Aber alle haben gelebt.',
         speakerLeft: 'Lale',
         speakerRight: null,
         focus: 'left',
@@ -163,7 +163,7 @@ export const SCENE_DATA = {
     'D0_READY_AGAIN': {
         type: 'narrative',
         title: 'Bereit',
-        text: 'Bootsmann: "Kapitän, wir sind bereit zum Auslaufen! Lass uns beweisen, dass der Kreislauf funktioniert."',
+        text: 'Kapitän, wir sind bereit zum Auslaufen! Lass uns beweisen, dass der Kreislauf funktioniert.',
         speakerLeft: 'Bootsmann',
         speakerRight: null,
         focus: 'left',
@@ -180,11 +180,11 @@ export const SCENE_DATA = {
     'D1_STERLING_ARRIVAL': {
         type: 'narrative',
         title: 'Ein Neuer auf der Insel',
-        text: 'Gestatten? Sterling. Ich beobachte Ihr kleines Experiment schon eine Weile. Idyllisch... aber schrecklich ineffizient.\n\nIch werde mein Zelt hier aufschlagen. Sie brauchen dringend professionelle Beratung. Komm zu meinem Zelt, wir sprechen sofort.',
+        text: 'Gestatten? Sterling. Ich beobachte Ihr kleines Experiment schon eine Weile. Idyllisch... aber schrecklich ineffizient. Ich werde mein Zelt hier aufschlagen. Sie brauchen dringend professionelle Beratung. Komm zu meinem Zelt, wir sprechen sofort.',
         speakerLeft: null,
         speakerRight: 'Sterling',
         focus: 'right',
-        cameraTarget: 'TENT', // FIX: Explizit auf TENT setzen, da Bank noch unter der Erde ist
+        cameraTarget: 'TENT',
         choices: [
             {
                 id: 'build_tent',
@@ -197,11 +197,11 @@ export const SCENE_DATA = {
     'D1_STERLING_DIRECTIVE': {
         type: 'narrative',
         title: 'Wachstums-Potential',
-        text: 'Sehen Sie sich um. Stillstand. Sie haben 100 Gold, morgen haben Sie 100 Gold. Langweilig.\n\nSie brauchen Skalierung! Ein Motorboot. Gehen Sie sofort zur Werft und prüfen Sie das Angebot. Wir müssen wachsen!',
+        text: 'Sehen Sie sich um. Stillstand. Sie haben 100 Gold, morgen haben Sie 100 Gold. Langweilig. Sie brauchen Skalierung! Ein Motorboot. Gehen Sie sofort zur Werft und prüfen Sie das Angebot. Wir müssen wachsen!',
         speakerLeft: null,
         speakerRight: 'Sterling',
         focus: 'right',
-        cameraTarget: 'TENT', // FIX: Explizit auf TENT setzen, da Bank noch unter der Erde ist
+        cameraTarget: 'TENT',
         choices: [
             {
                 id: 'go_shipyard',
@@ -214,7 +214,7 @@ export const SCENE_DATA = {
     'D1_PURCHASE_FAIL': {
         type: 'narrative',
         title: 'Zu teuer',
-        text: 'Ein Motorboot? Das ist Profi-Ausrüstung. Kostet 200 Gold. Wie ich sehe, hast du nur 100.\n\Ich vergebe keinen Kredit. Wenn du nicht genug einnimmst, musst du wohl deine Ausgaben senken.',
+        text: 'Ein Motorboot? Das ist Profi-Ausrüstung. Kostet 200 Gold. Wie ich sehe, hast du nur 100. Ich vergebe keinen Kredit. Wenn du nicht genug einnimmst, musst du wohl deine Ausgaben senken.',
         speakerLeft: "Kapt'n",
         speakerRight: 'Kian',
         focus: 'right',
@@ -233,7 +233,6 @@ export const SCENE_DATA = {
         focus: 'left',
         cameraTarget: 'HQ',
         choices: [
-            // ANPASSUNG: Spezifische Aktion, die den Quest-Trigger im Director auslöst
             { id: 'open_hq', text: 'Zum Kontor', action: 'activate_savings_quest' }
         ]
     },
@@ -247,7 +246,6 @@ export const SCENE_DATA = {
         focus: 'left',
         cameraTarget: 'HQ',
         choices: [
-            // Führt zur Analyse, danach kommt direkt das Kreditangebot (da Sterling schon da ist)
             { id: 'show_broken_cycle', text: 'Analyse ansehen', action: 'show_cycle_visual', param: 'BROKEN' }
         ]
     },
@@ -259,7 +257,7 @@ export const SCENE_DATA = {
     'D2_STERLING_INVITATION': {
         type: 'narrative',
         title: 'Eine Einladung',
-        text: 'Sterling: "Sie sitzen in der Falle, nicht wahr? Kein Wachstum, keine Perspektive. Aber ich habe eine Lösung."\n\nEr deutet auf sein Zelt. "Kommen Sie in meine Bank. Wir besprechen, wie ich Ihnen aus dieser Misere helfen kann."',
+        text: 'Sie sitzen in der Falle, nicht wahr? Kein Wachstum, keine Perspektive. Aber ich habe eine Lösung. Kommen Sie in meine Bank. Wir besprechen, wie ich Ihnen aus dieser Misere helfen kann.',
         speakerLeft: "Kapt'n",
         speakerRight: 'Sterling',
         focus: 'right',
@@ -272,11 +270,11 @@ export const SCENE_DATA = {
     'D2_STERLING_OFFER': {
         type: 'narrative',
         title: 'Die neue Filiale',
-        text: 'Sterling klopft auf den massiven Tresen.\n\nSterling: "Willkommen in meiner neuen Filiale! Ein Zelt war mir zu... provisorisch. Wir sind hier schließlich, um ernsthafte Geschäfte zu machen."\n\nEr schiebt ein Papier herüber. "Ich biete Ihnen 200 Gold Startkapital. 10% Zinsen. Flexible Rückzahlung."',
+        text: 'Willkommen in meiner neuen Filiale! Ein Zelt war mir zu... provisorisch. Wir sind hier schließlich, um ernsthafte Geschäfte zu machen. Ich biete Ihnen 200 Gold Startkapital. 10% Zinsen. Flexible Rückzahlung.',
         speakerLeft: "Kapt'n",
         speakerRight: 'Sterling',
         focus: 'right',
-        cameraTarget: null, // Kein automatischer Kameraschwenk, damit die Kontrolle beim Spieler bleibt
+        cameraTarget: null,
         choices: [
             { id: 'take_loan_200', text: 'Kredit annehmen (+200g)', action: 'take_loan_and_quest', amount: 200 }
         ]
@@ -285,7 +283,7 @@ export const SCENE_DATA = {
     'D2_BOAT_ORDER': {
         type: 'narrative',
         title: 'Die Bestellung',
-        text: 'Kian: "Ein Motorboot? Endlich! 200 Gold, und ich brauche zwei Tage Bauzeit. Damit fängst du fast doppelt so viel Fisch!"\n\nEr reibt sich die Hände. "Und weißt du was? Ich nehme dein altes Ruderboot in Zahlung. Ich verschrotte das alte Ding für dich."',
+        text: 'Ein Motorboot? Endlich! 200 Gold, und ich brauche zwei Tage Bauzeit. Damit fängst du fast doppelt so viel Fisch! Und weißt du was? Ich nehme dein altes Ruderboot in Zahlung. Ich verschrotte das alte Ding für dich.',
         speakerLeft: "Kapt'n",
         speakerRight: 'Kian',
         focus: 'right',
@@ -298,7 +296,7 @@ export const SCENE_DATA = {
     'D2_ECONOMIC_RECOVERY': {
         type: 'narrative',
         title: 'Der Boom beginnt',
-        text: 'Lale: "Sieh dir das an! Kian hat 200 Gold bekommen. Er stellt Leute ein! Mo bereitet sich auf volle Tische vor."\n\nSie lächelt. "Das frische Geld vom Festland bringt die Wirtschaft wieder in Gang. Expansion!"',
+        text: 'Sieh dir das an! Kian hat 200 Gold bekommen. Er stellt Leute ein! Mo bereitet sich auf volle Tische vor. Das frische Geld vom Festland bringt die Wirtschaft wieder in Gang. Expansion!',
         speakerLeft: 'Lale',
         speakerRight: null,
         focus: 'left',
@@ -311,7 +309,7 @@ export const SCENE_DATA = {
     'D2_STERLING_REMINDER': {
         type: 'narrative',
         title: 'Flexible Konditionen',
-        text: 'Genießen Sie die Expansion. Das Motorboot wird sich lohnen."\n\nEr lächelt geschäftsmäßig. "Übrigens: Flexible Rückzahlung bedeutet, ich fordere den Kredit zurück, sobald ich sehe, dass Sie liquide sind. Ihre Bonität wird es mir danken."',
+        text: 'Genießen Sie die Expansion. Das Motorboot wird sich lohnen. Übrigens: Flexible Rückzahlung bedeutet, ich fordere den Kredit zurück, sobald ich sehe, dass Sie liquide sind. Ihre Bonität wird es mir danken.',
         speakerLeft: "Kapt'n",
         speakerRight: 'Sterling',
         focus: 'right',
@@ -350,11 +348,11 @@ export const SCENE_DATA = {
     'D2_LOAN_RECALL': {
         type: 'narrative',
         title: 'Die Rückforderung',
-        text: 'Sterling: "Exzellente Arbeit. Ihre Liquidität ist hervorragend. Da wir flexible Konditionen haben, fordere ich den Kredit inkl. Zinsen jetzt zurück, um Ihr Bonitäts-Rating zu verbessern."\n\nEr öffnet sein Buch. "200 Gold Kredit plus 20 Gold Zinsen. 220 Gold gesamt."',
+        text: 'Exzellente Arbeit. Ihre Liquidität ist hervorragend. Da wir flexible Konditionen haben, fordere ich den Kredit inkl. Zinsen jetzt zurück, um Ihr Bonitäts-Rating zu verbessern. 200 Gold Kredit plus 20 Gold Zinsen. 220 Gold gesamt.',
         speakerLeft: "Kapt'n",
         speakerRight: 'Sterling',
         focus: 'right',
-        cameraTarget: null, // Kein automatischer Kameraschwenk, damit der Spieler die Kontrolle behält
+        cameraTarget: null,
         choices: [
             { id: 'pay_loan', text: 'Zahlung bestätigen (-220g)', action: 'repay_loan_boom' }
         ]
@@ -363,7 +361,7 @@ export const SCENE_DATA = {
     'D2_AFTER_REPAYMENT': {
         type: 'narrative',
         title: 'Zahlung abgeschlossen',
-        text: 'Sterling: "Perfekt. Die Zahlung ist verbucht. Das verbessert Ihr Rating erheblich."\n\nEr klappt sein Buch zu. "Weiter so. Die Wirtschaft braucht produktive Akteure wie Sie."',
+        text: 'Perfekt. Die Zahlung ist verbucht. Das verbessert Ihr Rating erheblich. Weiter so. Die Wirtschaft braucht produktive Akteure wie Sie.',
         speakerLeft: "Kapt'n",
         speakerRight: 'Sterling',
         focus: 'right',
@@ -381,37 +379,34 @@ export const SCENE_DATA = {
     'D3_INTRO': {
         type: 'narrative',
         title: 'Katerstimmung',
-        text: 'Der Kredit ist getilgt! Wir sind frei... aber sieh dir das Konto an. Nur noch 60 Gold.\n\nDas Motorboot verbraucht Unmengen an Sprit und die Crew will ihren Anteil. Das wird verdammt knapp für die nächste Fahrt.',
+        text: 'Der Kredit ist getilgt! Wir sind frei... aber sieh dir das Konto an. Nur noch 60 Gold. Das Motorboot verbraucht Unmengen an Sprit und die Crew will ihren Anteil. Das wird verdammt knapp für die nächste Fahrt.',
         speakerLeft: 'Lale',
         speakerRight: null,
         focus: 'left',
         cameraTarget: 'HQ',
         choices: [
-            // Neue Action, um den Pfeil danach zu steuern
             { id: 'risk_it', text: 'Okay!', action: 'start_crunch_gameplay' }
         ]
     },
 
-    // Hinweis: D3_PARTIAL_PAYMENT etc. werden durch dynamische Barks ersetzt.
-    // Wir springen direkt zum Finale nach Trip 2.
-
     'D3_DOWNWARD_SPIRAL': {
         type: 'narrative',
         title: 'Der Stillstand',
-        text: 'Faszinierend. Eine klassische Rezession. Die Werft hat keine Aufträge mehr, Kian musste Leute entlassen. Nun fehlt das Geld bei Mo in der Taverne. Die Liquidität ist aus dem System gesogen. Sie stecken fest. Aber ich habe ein Instrument, um Sie da rauszuholen.',
+        text: 'Faszinierend. Eine klassische Rezession. Die Werft hat keine Aufträge mehr, Kian musste Leute entlassen. Nun fehlt das Geld bei Mo in der Taverne. Die Liquidität ist aus dem System gesogen. Sie stecken fest.',
         speakerLeft: null,
         speakerRight: 'Sterling',
         focus: 'right',
         cameraTarget: 'BANK',
         choices: [
-            { id: 'ask_solution', text: 'Was schlagen Sie vor?', action: 'trigger_scene', param: 'D3_STERLING_SOLUTION' }
+            // Änderung: Ruft nun die Analyse auf, statt direkt zur Lösung zu springen
+            { id: 'analyze_trap', text: 'Analyse ansehen', action: 'show_cycle_visual', param: 'BOOM_BUST' }
         ]
     },
 
     'D3_STERLING_SOLUTION': {
         type: 'narrative',
         title: 'Umschuldung',
-        text: 'Sterling: "Ganz einfach: Refinanzierung. Ich biete Ihnen 500 Gold zur Umschuldung an."\n\nEr lächelt breit. "Damit können Sie die Durststrecke überbrücken und expandieren. Wachsen Sie aus der Krise heraus. Zinsen sind nur... Zahlen."',
+        text: 'Ganz einfach: Refinanzierung. Ich biete Ihnen 500 Gold zur Umschuldung an. Damit können Sie die Durststrecke überbrücken und expandieren. Wachsen Sie aus der Krise heraus. Zinsen sind nur... Zahlen.',
         speakerLeft: 'Lale',
         speakerRight: 'Sterling',
         focus: 'right',
@@ -429,7 +424,7 @@ export const SCENE_DATA = {
     'D4_STERLING_EXPANSION_PITCH': {
         type: 'narrative',
         title: 'Die Umschuldung',
-        text: 'Sterling: "Wir strukturieren das um. Ich stelle Ihnen 500 Gold zur Verfügung. Damit sind Sie sofort wieder handlungsfähig."\n\nEr lächelt kühl. "Die Zinsen – sagen wir 50 Gold pro Fahrt – ziehe ich laufend ein. Das hält die Verwaltung schlank. Einverstanden?"',
+        text: 'Wir strukturieren das um. Ich stelle Ihnen 500 Gold zur Verfügung. Damit sind Sie sofort wieder handlungsfähig. Die Zinsen – sagen wir 50 Gold pro Fahrt – ziehe ich laufend ein. Das hält die Verwaltung schlank. Einverstanden?',
         speakerLeft: null,
         speakerRight: 'Sterling',
         focus: 'right',
@@ -442,7 +437,7 @@ export const SCENE_DATA = {
     'D4_INTEREST_SHOCK': {
         type: 'narrative',
         title: 'Die Abrechnung',
-        text: 'Lale: "Chef, wir verbrennen Geld! Das Motorboot bringt 30 Gold Gewinn pro Fahrt, aber Sterling zieht sofort 50 Gold Zinsen ein."\n\nSie schlägt die Seiten im Konto auf. "Somit vernichten wir 20 Gold. Der Kredit frisst uns auf, bevor wir eine zweite Fahrt machen können."',
+        text: 'Chef, wir verbrennen Geld! Das Motorboot bringt 30 Gold Gewinn pro Fahrt, aber Sterling zieht sofort 50 Gold Zinsen ein. Somit vernichten wir 20 Gold. Der Kredit frisst uns auf, bevor wir eine zweite Fahrt machen können.',
         speakerLeft: 'Lale',
         speakerRight: null,
         focus: 'left',
@@ -455,7 +450,7 @@ export const SCENE_DATA = {
     'D4_STERLING_ADVICE': {
         type: 'narrative',
         title: 'Kühle Rechnung',
-        text: 'Sterling: "Nicht emotional werden. Es ist eine einfache Rechenaufgabe: +30 Gold aus dem Motorboot, aber -50 Zinsen bedeuten pro Fahrt -20. So halten wir den Kredit nie." \n\nEr wandert zur Werft und streicht mit dem Finger über den Tisch. "Sie müssen den Output erhöhen. Kian hat da eine... effiziente Lösung."',
+        text: 'Nicht emotional werden. Es ist eine einfache Rechenaufgabe: +30 Gold aus dem Motorboot, aber -50 Zinsen bedeuten pro Fahrt -20. So halten wir den Kredit nie. Sie müssen den Output erhöhen. Kian hat da eine... effiziente Lösung.',
         speakerLeft: null,
         speakerRight: 'Sterling',
         focus: 'right',
@@ -468,7 +463,7 @@ export const SCENE_DATA = {
     'D4_KIAN_UPGRADE': {
         type: 'narrative',
         title: 'Das Schleppnetz',
-        text: 'Kian: "Sterling hat angerufen. Ich kann eine Winde an dein Boot montieren. Damit schleifen wir den Grund ab."\n\nEr kratzt sich am Kopf. "Wir fangen doppelt so viel, aber... naja, der Boden leidet. Kostet 350 Gold."',
+        text: 'Sterling hat angerufen. Ich kann eine Winde an dein Boot montieren. Damit schleifen wir den Grund ab. Wir fangen doppelt so viel, aber... naja, der Boden leidet. Kostet 350 Gold.',
         speakerLeft: "Kapt'n",
         speakerRight: 'Kian',
         focus: 'right',
@@ -481,7 +476,7 @@ export const SCENE_DATA = {
     'D4_RANI_INTRO': {
         type: 'narrative',
         title: 'Trübes Wasser',
-        text: 'Eine junge Frau steht am Steg und starrt ins Wasser.\n\nRani: "Haben Sie gesehen, was im Netz hängt? Nicht nur Speisefisch. Korallen, Jungfische... Sie pflügen den Boden um. Das Wasser wird trüb."',
+        text: 'Haben Sie gesehen, was im Netz hängt? Nicht nur Speisefisch. Korallen, Jungfische... Sie pflügen den Boden um. Das Wasser wird trüb.',
         speakerLeft: 'Rani',
         speakerRight: 'Sterling',
         focus: 'left',
@@ -494,7 +489,7 @@ export const SCENE_DATA = {
     'D4_STERLING_REBUTTAL': {
         type: 'narrative',
         title: 'Prioritäten',
-        text: 'Sterling tritt hervor.\n\nSterling: "Ignorieren Sie das. Wir schreiben endlich schwarze Zahlen. Der Kredit wird bedient. Das System ist stabil."',
+        text: 'Ignorieren Sie das. Wir schreiben endlich schwarze Zahlen. Der Kredit wird bedient. Das System ist stabil.',
         speakerLeft: 'Rani',
         speakerRight: 'Sterling',
         focus: 'right',
@@ -507,7 +502,7 @@ export const SCENE_DATA = {
     'D4_TO_D5_TRANSITION': {
         type: 'narrative',
         title: 'Rechnung geht nicht auf',
-        text: 'Sterling tritt ans Ufer und mustert dein Boot.\n\nSterling: "Das Motorboot bringt 30 Gold Gewinn, ich ziehe 50 Gold Zinsen ab. Sie verbrennen 20 Gold pro Fahrt. Sie tilgen so nie."\n\nEr lächelt kühl. "Sie brauchen das größere Boot. Sofort."',
+        text: 'Das Motorboot bringt 30 Gold Gewinn, ich ziehe 50 Gold Zinsen ab. Sie verbrennen 20 Gold pro Fahrt. Sie tilgen so nie. Sie brauchen das größere Boot. Sofort.',
         speakerLeft: "Kapt'n",
         speakerRight: 'Sterling',
         focus: 'right',
@@ -520,7 +515,7 @@ export const SCENE_DATA = {
     'D5_STERLING_DEMANDS_TRAWLER': {
         type: 'narrative',
         title: 'Die einzige Lösung',
-        text: 'Sterling: "Die Lösung ist trivial: Mehr Output. Kian hat einen Trawler. Der kostet 500 Gold. Ohne ihn zahlen Sie den Kredit nie zurück."\n\nEr schlägt sein Buch auf. "Besorgen Sie das Geld oder ich gebe Ihnen einen Kredit. Dann gehen Sie zur Werft und kaufen den Trawler."',
+        text: 'Die Lösung ist trivial: Mehr Output. Kian hat einen Trawler. Der kostet 500 Gold. Ohne ihn zahlen Sie den Kredit nie zurück. Besorgen Sie das Geld oder ich gebe Ihnen einen Kredit. Dann gehen Sie zur Werft und kaufen den Trawler.',
         speakerLeft: "Kapt'n",
         speakerRight: 'Sterling',
         focus: 'right',
@@ -533,7 +528,7 @@ export const SCENE_DATA = {
     'D5_STERLING_LOAN_OFFER': {
         type: 'narrative',
         title: 'Liquiditäts-Spritze',
-        text: 'Sterling: "Zu wenig Kapital für den Trawler? Ich gebe Ihnen 400 Gold Vorschuss."\n\nEr lächelt. "Zinsen bleiben 50 Gold pro Fahrt. Wir nennen es Expansion-Finanzierung."',
+        text: 'Zu wenig Kapital für den Trawler? Ich gebe Ihnen 400 Gold Vorschuss. Zinsen bleiben 50 Gold pro Fahrt. Wir nennen es Expansion-Finanzierung.',
         speakerLeft: null,
         speakerRight: 'Sterling',
         focus: 'right',
@@ -546,7 +541,7 @@ export const SCENE_DATA = {
     'D6_ECOLOGICAL_COLLAPSE': {
         type: 'narrative',
         title: 'Leere Netze',
-        text: 'Rani steht am Steg und starrt ins trübe Wasser.\n\nRani: "Es ist vorbei. Ihr habt den Meeresboden kahl gefischt. Die Jungfische sind tot. Es wächst nichts mehr nach."',
+        text: 'Es ist vorbei. Ihr habt den Meeresboden kahl gefischt. Die Jungfische sind tot. Es wächst nichts mehr nach.',
         speakerLeft: 'Rani',
         speakerRight: null,
         focus: 'left',
@@ -559,7 +554,7 @@ export const SCENE_DATA = {
     'D6_STERLING_FINAL': {
         type: 'narrative',
         title: 'Systemkollaps',
-        text: 'Sterling erscheint mit seinem Buch.\n\nSterling: "Bedauerlich. Die Ressource ist erschöpft, Ihre Einnahmen null. Der Kredit kann nicht bedient werden."\n\nEr macht eine Notiz. "Ich übernehme die Insel als Sicherheit. Wirtschaftlich betrachtet war das... unvermeidbar."',
+        text: 'Bedauerlich. Die Ressource ist erschöpft, Ihre Einnahmen null. Der Kredit kann nicht bedient werden. Ich übernehme die Insel als Sicherheit. Wirtschaftlich betrachtet war das... unvermeidbar.',
         speakerLeft: null,
         speakerRight: 'Sterling',
         focus: 'right',
@@ -577,7 +572,7 @@ export const SCENE_DATA = {
     'D5_RANI_WARNING': {
         type: 'narrative',
         title: 'Grenzen des Wachstums',
-        text: 'Rani: "Der Trawler ist zu viel! Das Meer hält das nicht aus. Seht ihr nicht, wie das Wasser trüb wird? Die Korallen sterben, die Jungfische verschwinden. Wenn das so weitergeht, gibt es bald nichts mehr!"\n\nSterling: "Dramatisieren Sie nicht. Die Zahlen stimmen. Die Zinsen warten nicht. Weiterfischen."',
+        text: 'Der Trawler ist zu viel! Das Meer hält das nicht aus. Seht ihr nicht, wie das Wasser trüb wird? Die Korallen sterben, die Jungfische verschwinden. Wenn das so weitergeht, gibt es bald nichts mehr! Dramatisieren Sie nicht. Die Zahlen stimmen. Die Zinsen warten nicht. Weiterfischen.',
         speakerLeft: 'Rani',
         speakerRight: 'Sterling',
         focus: 'left',
@@ -590,7 +585,7 @@ export const SCENE_DATA = {
     'D7_COLLAPSE': {
         type: 'narrative',
         title: 'Das Ende',
-        text: 'Kian: "Die Netze sind leer. Es gibt nichts mehr."\n\nSterling: "Bedauerlich. Ich pfände dann mal die Insel. Einen schönen Tag noch."',
+        text: 'Die Netze sind leer. Es gibt nichts mehr. Bedauerlich. Ich pfände dann mal die Insel. Einen schönen Tag noch.',
         speakerLeft: 'Kian',
         speakerRight: 'Sterling',
         focus: 'right',

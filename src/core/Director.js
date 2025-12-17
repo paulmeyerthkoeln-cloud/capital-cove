@@ -147,6 +147,7 @@ class Director {
         this.tutorialObjectivesCompleted = false;
         this.bankOfferTimeout = null;
         this.tutorialTavernHintTimer = null;
+        this.tutorialBoatHintTimer = null;
     }
 
     init() {
@@ -301,6 +302,24 @@ class Director {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
 
+    startTutorialTavernReminder() {
+        if (this.tutorialTavernHintTimer) {
+            clearTimeout(this.tutorialTavernHintTimer);
+        }
+
+        this.tutorialTavernHintTimer = setTimeout(() => {
+            this.tutorialTavernHintTimer = null;
+
+            if (this.currentPhaseId !== 'TUTORIAL') return;
+
+            const obj = this.activeObjectives.find(o => o.id === 'buy_round');
+            if (obj && obj.done) return;
+
+            events.emit(EVENTS.CMD_SHOW_BUILDING_HINT, { type: 'tavern', show: true });
+            events.emit(EVENTS.TOAST, { message: 'Gib eine Runde im Lustigen Lachs aus!' });
+        }, 15000);
+    }
+
     checkTutorialObjectives() {
         if (this.currentPhaseId !== 'TUTORIAL' || this.tutorialObjectivesCompleted) return;
 
@@ -438,7 +457,7 @@ class Director {
         economy.setSimulationActive(true);
     }
 
-    async promptBoatStart(showDialog = true) {
+    async promptBoatStart() {
         ui.hideCinematicCard();
         ui.hideCinematicLayer();
         ui.showUI();
@@ -450,12 +469,8 @@ class Director {
         // Boot-Manager triggern um Hint anzuzeigen
         events.emit(EVENTS.CMD_SHOW_BOAT_HINT, { show: true });
 
-        if (showDialog) {
-            this.triggerScene('D0_INTRO');
-        } else {
-            // Nur ein Toast, wenn kein Dialog (z.B. am Ende des Intros)
-            events.emit(EVENTS.TOAST, { message: 'Klicke auf das Boot, um zu starten!' });
-        }
+        // Hinweis anzeigen statt Dialog
+        events.emit(EVENTS.TOAST, { message: 'Klicke auf das Boot, um zu starten!' });
 
         this.waitingForBoatClick = true;
     }
@@ -518,6 +533,13 @@ class Director {
         // Sonderfall: Tutorial-Abschluss (Boot starten nach Lales Erklärung)
         if (this.waitingForTutorialRelease && type === 'boat') {
             this.waitingForTutorialRelease = false;
+
+            // Timer abbrechen, falls Spieler selbst gestartet hat
+            if (this.tutorialBoatHintTimer) {
+                clearTimeout(this.tutorialBoatHintTimer);
+                this.tutorialBoatHintTimer = null;
+            }
+
             events.emit(EVENTS.CMD_SHOW_BOAT_HINT, { show: false });
 
             // Dialog schließen, falls offen
@@ -531,6 +553,7 @@ class Director {
 
             const bm = window.game.boatManager;
             if (bm && bm.boats[0]) {
+                this.startTutorialTavernReminder();
                 bm.startBoat(0);
                 events.emit(EVENTS.TOAST, { message: 'Der Kreislauf läuft nun automatisch.' });
             }
@@ -563,6 +586,12 @@ class Director {
         // Normale Menüs blockieren, wenn Szenen laufen
         if (this.isSceneActive || this.isIntroRunning) return;
 
+        // Blockade aller Gebäude während aktiver Sparmaßnahmen, AUSSER Bank/Zelt (für Story-Fortschritt)
+        if (economy.state.isSavingActive && type !== 'boat' && type !== 'bank' && type !== 'bank_tent') {
+            events.emit(EVENTS.TOAST, { message: 'Wir sparen bereits. Warte auf Ergebnisse...' });
+            return;
+        }
+
         if (type === 'boat') {
             // KAPITEL 4 BLOCKADE
             const hasDoneFirstGrowthTrapTrip = (this.flags.growthTrapTripCount || 0) >= 1;
@@ -588,10 +617,6 @@ class Director {
 
             if (this.currentPhaseId === 'STAGNATION' && !this.flags.savingsProposed) {
                 ui.hidePersistentWarning();
-            }
-            if (economy.state.isSavingActive) {
-                events.emit(EVENTS.TOAST, { message: 'Wir sparen bereits. Warte auf Ergebnisse...' });
-                return;
             }
 
             // --- HIER IST DER FIX ---
@@ -667,23 +692,31 @@ class Director {
         events.emit(EVENTS.CMD_SHOW_BUILDING_HINT, { type: 'shipyard', show: false });
         this.markObjectiveDone('buy_motorboat');
 
-        // 2. BAU STARTEN
+        // 2. BAU STARTEN (Wolke erscheint)
         if (bm) bm.startMotorBoatConstruction(0);
 
-        events.emit(EVENTS.TOAST, { message: "Kauf bestätigt! Ausbau beginnt. Kian erhält 200 Gold." });
+        events.emit(EVENTS.TOAST, { message: "Kauf bestätigt! Ausbau beginnt." });
 
-        // 3. SACK 1: HQ -> WERFT
+        // 3. VISUALISIERUNG: SACK 1 (HQ -> WERFT)
         if(buildings) {
             bManager.visualizeBigTransfer('HQ', 'SHIPYARD', true);
         }
 
-        // Sofort Kian-Reaktionen ohne zusätzliche Kamera/Wartezeiten
+        // Kian reagiert auf das Geld
         events.emit(EVENTS.SHOW_WORLD_BARK, {
             targetId: 'shipyard',
             speaker: 'Kian',
             text: 'Ein großer Auftrag! Damit kann ich wieder Leute einstellen.',
             icon: '🏗️'
         });
+
+        // Warten bis Geld bei Werft ist
+        await this.wait(2000);
+
+        // 4. VISUALISIERUNG: SACK 2 (WERFT -> TAVERNE)
+        // Der Boom breitet sich aus
+        bManager.visualizeBigTransfer('SHIPYARD', 'TAVERN', true);
+
         events.emit(EVENTS.SHOW_WORLD_BARK, {
             targetId: 'shipyard',
             speaker: 'Kian',
@@ -691,27 +724,20 @@ class Director {
             icon: '🍻'
         });
 
-        // SACK 2: WERFT -> TAVERNE
-        bManager.visualizeBigTransfer('SHIPYARD', 'TAVERN', true);
-
+        // Party Runner spawnen
         if (pm) {
             const shipPos = buildings.shipyardGroup.position;
             const tavPos = buildings.tavernGroup.position;
             pm.spawnPartyRunners(8, shipPos, tavPos);
-            setTimeout(() => { pm.spawnPartyRunners(5, shipPos, tavPos); }, 1000);
         }
+
+        // Warten auf Party-Start
+        await this.wait(2500);
 
         const tavPos = buildings.tavernGroup.position;
         ui.createFloatingText("BOOM!", new THREE.Vector3(tavPos.x, 30, tavPos.z), '#FFD700');
 
-        // 7. MO REAKTION (ohne extra Kamera-Wartezeit)
-        events.emit(EVENTS.SHOW_WORLD_BARK, {
-            targetId: 'tavern',
-            speaker: 'Mo',
-            text: 'Die Leute essen und trinken wie verrückt!',
-            icon: '🍺🍖'
-        });
-
+        // Mo freut sich
         events.emit(EVENTS.SHOW_WORLD_BARK, {
             targetId: 'tavern',
             speaker: 'Mo',
@@ -719,9 +745,10 @@ class Director {
             icon: '💰'
         });
 
-        // 8. FERTIGSTELLUNG MOTORBOOT
-        if (bm) bm.finishMotorBoatConstruction(0);
+        // WICHTIG: Bauzeit simulieren (Wolke bleibt sichtbar)
+        await this.wait(3000);
 
+        // 5. FERTIGSTELLUNG
         events.emit(EVENTS.SHOW_WORLD_BARK, {
             targetId: 'shipyard',
             speaker: 'Kian',
@@ -729,12 +756,13 @@ class Director {
             icon: '🚤'
         });
 
-        // Boot wirklich erst nach Kians Ansage freigeben
-        await this.wait(800);
+        // Kurze Pause nach der Ansage, bevor es "Plopp" macht
+        await this.wait(1500);
+
         if (bm) bm.finishMotorBoatConstruction(0);
 
-        // 9. ABSCHLUSS
-        console.log("🎬 [BOOM] Sequenz fertig. Kamera Reset.");
+        // 6. ABSCHLUSS
+        console.log("🎬 [BOOM] Sequenz fertig. Input frei.");
 
         input.setLocked(false);
         events.emit(EVENTS.CMD_RELEASE_BOATS);
@@ -805,12 +833,12 @@ class Director {
                 events.emit(EVENTS.SHOW_WORLD_BARK, {
                     targetId: 'tavern', speaker: 'Mo', text: "Das Geschäft läuft wieder, Prost!", icon: "🍻", isCrisis: false
                 });
-                await this.wait(4000);
+                await this.wait(6000); // Längere Pause zwischen den Dialogen
 
                 events.emit(EVENTS.SHOW_WORLD_BARK, {
                     targetId: 'shipyard', speaker: 'Kian', text: "Endlich wieder Arbeit. Das tut gut.", icon: "🔧", isCrisis: false
                 });
-                await this.wait(4000);
+                await this.wait(6000); // Längere Pause zwischen den Dialogen
 
                 // 6. DER SCHOCK (Bank Zinsen Billboard)
                 events.emit(EVENTS.SHOW_BILLBOARD, {
@@ -1036,7 +1064,7 @@ class Director {
                         icon: '🌊',
                         isCrisis: true
                     });
-                    await this.wait(4000);
+                    await this.wait(6000);
                 }
             }
             else if (tripIndex === 3) {
@@ -1051,7 +1079,7 @@ class Director {
                     icon: '🤢',
                     isCrisis: true
                 });
-                await this.wait(4000);
+                await this.wait(6000);
             }
             else if (tripIndex === 4) {
                 // Trip 4: Kritisch (13% Abbau, total 51%)
@@ -1065,7 +1093,7 @@ class Director {
                     icon: '😰',
                     isCrisis: true
                 });
-                await this.wait(4000);
+                await this.wait(6000);
             }
             else if (tripIndex === 5) {
                 // Trip 5: Sehr kritisch (12% Abbau, total 63%)
@@ -1079,7 +1107,7 @@ class Director {
                     icon: '⚠️',
                     isCrisis: true
                 });
-                await this.wait(4000);
+                await this.wait(6000);
             }
             else if (tripIndex === 6) {
                 // Trip 6: Dramatisch (12% Abbau, total 75%)
@@ -1094,7 +1122,7 @@ class Director {
                         icon: '🌿',
                         isCrisis: true
                     });
-                    await this.wait(4000);
+                    await this.wait(6000);
                 }
             }
             else if (tripIndex === 7) {
@@ -1109,7 +1137,7 @@ class Director {
                     icon: '😔',
                     isCrisis: true
                 });
-                await this.wait(4000);
+                await this.wait(6000);
             }
             else if (tripIndex >= 8) {
                 // Trip 8+: TOTALER KOLLAPS (Rest auf 0)
@@ -1193,8 +1221,12 @@ class Director {
 
             case 'activate_shipyard_quest':
                 this.endScene();
-                // KAMERA ENTFERNT: setTimeout(() => this.setIslandOverviewCamera(), 200);
+
+                // 1. Werft-Pfeil einschalten
                 events.emit(EVENTS.CMD_SHOW_BUILDING_HINT, { type: 'shipyard', show: true });
+
+                // 2. FIX: HQ-Pfeil explizit ausschalten, damit er nicht zu früh sichtbar ist
+                events.emit(EVENTS.CMD_SHOW_BUILDING_HINT, { type: 'hq', show: false });
 
                 // ÄNDERUNG: Neutraler Hinweis statt Warnung
                 ui.showPersistentHint('Prüfe Angebot in der Werft');
@@ -1251,8 +1283,18 @@ class Director {
                 input.setLocked(false);
                 setTimeout(() => this.setIslandOverviewCamera(), 200);
                 this.waitingForTutorialRelease = true;
-                events.emit(EVENTS.CMD_SHOW_BOAT_HINT, { show: true });
-                events.emit(EVENTS.TOAST, { message: 'Klicke auf das Boot, um zu starten.' });
+
+                // Verzögerter Hinweis: Zeige erst nach 10 Sekunden an, falls Spieler nicht selbst gestartet hat
+                if (this.tutorialBoatHintTimer) {
+                    clearTimeout(this.tutorialBoatHintTimer);
+                }
+                this.tutorialBoatHintTimer = setTimeout(() => {
+                    // Nur anzeigen, wenn Spieler noch nicht selbst gestartet hat
+                    if (this.waitingForTutorialRelease) {
+                        events.emit(EVENTS.CMD_SHOW_BOAT_HINT, { show: true });
+                        events.emit(EVENTS.TOAST, { message: 'Klicke auf das Boot, um zu starten.' });
+                    }
+                }, 10000); // 10 Sekunden
                 break;
 
             case 'start_crunch_gameplay':
@@ -1276,15 +1318,26 @@ class Director {
                 }, 200);
                 break;
 
-            // --- CHAPTER 1 END: CYCLE ANALYSIS ---
+            // --- CHAPTER 1 & 3 CYCLE ANALYSIS ---
             case 'show_cycle_visual':
                 this.endScene();
-                const isBroken = (choice.param === 'BROKEN');
-                // Standard Chapter 1 Analysis
+
+                let cycleMode = 'HEALTHY'; // Default (Kapitel 0)
+                let isBroken = false;
+
+                // Mapping der Parameter auf UI-Modi
+                if (choice.param === 'BROKEN') {
+                    cycleMode = 'STAGNATION';
+                    isBroken = true;
+                } else if (choice.param === 'BOOM_BUST') {
+                    cycleMode = 'BOOM_BUST';
+                    isBroken = true; // Roter Rahmen für das Fenster
+                }
+
                 setTimeout(() => {
                     events.emit('ui:show_cycle_explanation', {
                         broken: isBroken,
-                        mode: isBroken ? 'STAGNATION' : 'HEALTHY'
+                        mode: cycleMode
                     });
                 }, 200);
                 break;
@@ -1740,15 +1793,13 @@ class Director {
             }, 1000);
         }
 
-        // Fall B: Kapitel 3 (Leakage Analyse) -> Kapitel 4 Start
+        // Fall B: Kapitel 3 (Boom/Bust Analyse) -> Lösungsvorschlag
         else if (this.currentPhaseId === 'CRUNCH') {
-            // Hier findet der Phasenwechsel statt, NACHDEM der Spieler "Verstanden" geklickt hat.
-            this.setPhase('GROWTH_TRAP');
-
-            // Sterling erklärt die Lösung (Expansion)
+            // Die Phase wechselt erst, wenn der Spieler den Kredit annimmt.
+            // Jetzt zeigen wir erst den Lösungsvorschlag (Refinanzierung).
             setTimeout(() => {
-                this.triggerScene('D4_STERLING_EXPANSION_PITCH'); // Neue Szene für Kap 4
-            }, 1000);
+                this.triggerScene('D3_STERLING_SOLUTION');
+            }, 500);
         }
 
         // Fall C: Tutorial
@@ -1977,7 +2028,7 @@ class Director {
                 icon: barkIcon,
                 isCrisis: true
             });
-            await this.wait(3500);
+            await this.wait(5500);
         }
 
         // 2. VISUELLE KISTEN
@@ -2416,7 +2467,7 @@ class Director {
         // 1. Bark anzeigen
         const bark = this.getBoomBarkForFirstTrip(charKey, accepted);
         events.emit(EVENTS.SHOW_WORLD_BARK, bark);
-        await this.wait(3000);
+        await this.wait(5500); // Warten auf Bark (5s + Puffer)
 
         // 2. Kisten fliegen
         if (accepted > 0) {
@@ -2614,7 +2665,7 @@ class Director {
         events.emit(EVENTS.SHOW_WORLD_BARK, bark);
 
         // Warten bis Bark gelesen wurde und ausgeblendet ist
-        await this.wait(3600);
+        await this.wait(5500); // Warten bis Bark gelesen wurde
 
         // 2. KISTEN
         const accepted = crateData.accepted;
@@ -2959,17 +3010,6 @@ class Director {
             this.boomProfitableTrips = 0;
             this.boomProgressShown = false;
             this.boomWarningShown = false;
-        }
-
-        if (phaseId === 'TUTORIAL') {
-            // Nach kurzer Zeit dezenten Hinweis auf Mo zeigen, falls keine Runde ausgegeben wurde
-            this.tutorialTavernHintTimer = setTimeout(() => {
-                if (this.currentPhaseId !== 'TUTORIAL') return;
-                const obj = this.activeObjectives.find(o => o.id === 'buy_round');
-                if (obj && obj.done) return;
-                events.emit(EVENTS.CMD_SHOW_BUILDING_HINT, { type: 'tavern', show: true });
-                events.emit(EVENTS.TOAST, { message: 'Gib eine Runde im Lustigen Lachs aus!' });
-            }, 20000); // 20 Sekunden
         }
 
         events.emit(DIRECTOR_EVENTS.PHASE_CHANGED, {

@@ -420,7 +420,7 @@ export class BuildingManager {
         const emissive = options.emissive ?? 0x000000;
         const emissiveIntensity = options.emissiveIntensity ?? 0.5;
 
-        const coinGeo = new THREE.CylinderGeometry(2.5, 2.5, 0.5, 12); 
+        const coinGeo = new THREE.CylinderGeometry(2.5, 2.5, 0.5, 6); 
         const coinMat = new THREE.MeshStandardMaterial({ 
             color: color, 
             metalness: metalness, 
@@ -455,7 +455,7 @@ export class BuildingManager {
     createClogParticle(startPos, endPos) {
         if (!startPos || !endPos) return;
         const mid = startPos.clone().lerp(endPos, 0.5);
-        const geo = new THREE.SphereGeometry(2, 10, 10);
+        const geo = new THREE.IcosahedronGeometry(2, 0);
         const mat = new THREE.MeshStandardMaterial({ color: 0x95a5a6, transparent: true, opacity: 0.85, roughness: 1.0, metalness: 0 });
         const puff = new THREE.Mesh(geo, mat);
         puff.position.copy(startPos);
@@ -768,12 +768,14 @@ export class BuildingManager {
 
 
     spawnWorkParticles(center, type) {
-        const count = type === 'SPARK' ? 5 : 2;
+        // OPTIMIERUNG: Funkenanzahl auf 2 reduziert für Tablets (GC-Entlastung)
+        const count = 2;
         const color = type === 'SPARK' ? 0xFFFF00 : 0x8D6E63;
-        const geo = new THREE.BoxGeometry(0.3, 0.3, 0.3); 
+        const particleGeo = new THREE.BoxGeometry(0.3, 0.3, 0.3);
+        const particleMat = new THREE.MeshBasicMaterial({ color: color });
 
         for(let i=0; i<count; i++) {
-            const mesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: color }));
+            const mesh = new THREE.Mesh(particleGeo, particleMat);
 
             mesh.position.copy(center).add(new THREE.Vector3(
                 (Math.random()-0.5)*10,
@@ -800,16 +802,17 @@ export class BuildingManager {
     }
 
     spawnCoinFlow(direction, intensity = 1.0) {
-        if (!this.coinsEnabled) return; 
+        if (!this.coinsEnabled) return;
         if (!this.hqGroup || !this.tavernGroup || !this.shipyardGroup) return;
 
-        const dropChance = Math.max(0.2, intensity);
+        // OPTIMIERUNG: dropChance auf 0.5 begrenzt für Tablets (GC-Entlastung)
+        const dropChance = Math.min(0.5, Math.max(0.2, intensity));
 
-        if (Math.random() > this.flowIntensity) return; 
-        if (Math.random() > dropChance) return; 
+        if (Math.random() > this.flowIntensity) return;
+        if (Math.random() > dropChance) return;
 
-        let coinCount = 1;
-        if (intensity >= 0.95) coinCount = 2; 
+        // OPTIMIERUNG: Maximal 1 Münze pro Flow (GC-Entlastung)
+        let coinCount = 1; 
         
         const standardOps = { speed: 0.15, scale: 1.0 };
         
@@ -1348,17 +1351,17 @@ export class BuildingManager {
     spawnConstructionDust(pos, colorHex, isBig = false) {
         if (!pos) return;
 
-        const count = isBig ? 25 : 15;
-        const geo = new THREE.DodecahedronGeometry(1, 0);
+        // OPTIMIERUNG: Partikelanzahl reduziert für Tablets (GC-Entlastung)
+        const count = isBig ? 12 : 6;
+        const geo = new THREE.BoxGeometry(1.5, 1.5, 1.5); // Einfache Würfel reichen als Staubteilchen
+        const mat = new THREE.MeshStandardMaterial({
+            color: colorHex,
+            transparent: true,
+            opacity: 1.0,
+            flatShading: true
+        });
 
         for (let i = 0; i < count; i++) {
-            const mat = new THREE.MeshStandardMaterial({
-                color: colorHex,
-                transparent: true,
-                opacity: 1.0,
-                flatShading: true
-            });
-
             const mesh = new THREE.Mesh(geo, mat);
             const spread = isBig ? 20 : 15;
             const offsetX = (Math.random() - 0.5) * spread;
@@ -1588,6 +1591,43 @@ export class BuildingManager {
         return mesh;
     }
 
+    // Erstellt eine transparente, aber klickbare Hitbox um eine Gebäude-Gruppe
+    createHitbox(group) {
+        if (!group) return null;
+
+        group.updateMatrixWorld(true);
+
+        const bbox = new THREE.Box3().setFromObject(group);
+        const size = new THREE.Vector3();
+        const center = new THREE.Vector3();
+        bbox.getSize(size);
+        bbox.getCenter(center);
+
+        const mat = new THREE.MeshBasicMaterial({ 
+            visible: true,        // Muss true sein für Raycast
+            transparent: true,    // Transparent aktivieren
+            opacity: 0,           // Aber vollkommen durchsichtig
+            depthWrite: false     // Optimierung: Schreibt nicht in den Tiefenbuffer
+        });
+
+        const hitbox = new THREE.Mesh(
+            new THREE.BoxGeometry(
+                Math.max(size.x, 0.01),
+                Math.max(size.y, 0.01),
+                Math.max(size.z, 0.01)
+            ),
+            mat
+        );
+
+        hitbox.position.copy(center);
+        group.worldToLocal(hitbox.position);
+
+        // Nutzerdaten beibehalten, damit Klick-Handler weiter funktionieren
+        hitbox.userData = { ...(group.userData || {}), isInteractable: true };
+
+        return hitbox;
+    }
+
     getGroundHeight(x, z) {
         const dist = Math.sqrt(x * x + z * z);
         const noise = Math.sin(x * 0.07) * Math.cos(z * 0.07) * 2 + Math.sin(x * 0.15 + z * 0.1) * 1;
@@ -1732,6 +1772,11 @@ export class BuildingManager {
         group.rotation.y = 0;
         
         this.hqGroup = group; 
+
+        const hqHitbox = this.createHitbox(group);
+        if (hqHitbox) {
+            group.add(hqHitbox);
+        }
         
         sceneSetup.scene.add(group);
         sceneSetup.registerInteractable(group);
@@ -1762,6 +1807,11 @@ export class BuildingManager {
         group.visible = false; 
 
         group.userData = { type: 'bank_tent', name: 'Sterlings Zelt', isInteractable: true };
+
+        const tentHitbox = this.createHitbox(group);
+        if (tentHitbox) {
+            group.add(tentHitbox);
+        }
 
         sceneSetup.scene.add(group);
         if (group.visible) sceneSetup.registerInteractable(group);
@@ -1847,6 +1897,11 @@ export class BuildingManager {
         group.visible = false;
 
         group.userData = { type: 'bank', name: 'Inselbank', isInteractable: true };
+
+        const bankHitbox = this.createHitbox(group);
+        if (bankHitbox) {
+            group.add(bankHitbox);
+        }
 
         sceneSetup.scene.add(group);
         this.buildings.push(group);
@@ -2028,6 +2083,11 @@ export class BuildingManager {
 
         this.tavernGroup = group;
 
+        const tavernHitbox = this.createHitbox(group);
+        if (tavernHitbox) {
+            group.add(tavernHitbox);
+        }
+
         sceneSetup.scene.add(group);
         sceneSetup.registerInteractable(group);
         this.buildings.push(group);
@@ -2133,6 +2193,11 @@ export class BuildingManager {
         group.userData = { type: 'shipyard', name: 'Werft', isInteractable: true, baseY: y };
 
         this.shipyardGroup = group;
+        
+        const shipyardHitbox = this.createHitbox(group);
+        if (shipyardHitbox) {
+            group.add(shipyardHitbox);
+        }
         
         this.shipyardSparks = this.createWorkParticles(new THREE.Vector3(x, y + 2, z));
 

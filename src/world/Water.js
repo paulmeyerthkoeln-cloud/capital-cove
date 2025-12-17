@@ -2,13 +2,10 @@ import * as THREE from 'three';
 import { sceneSetup } from '../core/SceneSetup.js';
 import { events, EVENTS, DIRECTOR_EVENTS } from '../core/Events.js';
 
-// PERFORMANCE-HINWEIS für Tablets:
-// Der Fragment Shader berechnet per-Pixel Simplex Noise (snoise) und Verzerrungen.
-// Da das Wasser fast den ganzen Bildschirm füllt, werden Millionen Pixel pro Frame berechnet.
-// Bei Überhitzung oder starkem Ruckeln können folgende Optimierungen helfen:
-// 1. Geometrie weiter reduzieren (z.B. auf 32x32 Segmente in init())
-// 2. Noise-Berechnungen im fragmentShader vereinfachen oder Frequenz reduzieren
-// 3. Wellen-Effekte zeitweise deaktivieren (waveStrength = 0)
+// PERFORMANCE-OPTIMIERUNG:
+// Die schwere Arbeit (Noise-Berechnungen) wurde in den Vertex Shader verschoben.
+// Der Fragment Shader macht nur noch Farben mischen und Normalen berechnen (für Low-Poly Look).
+// Das spart Millionen Rechenoperationen pro Frame.
 
 const noiseFunction = `
     vec3 permute(vec3 x) { return mod(((x*34.0)+1.0)*x, 289.0); }
@@ -44,6 +41,8 @@ const vertexShader = `
     varying float vElevation;
     varying vec3 vPosition;
     varying float vDist;
+    // vFoam entfernt, da wir es pixelgenau berechnen müssen
+
     ${noiseFunction}
 
     void main() {
@@ -55,11 +54,12 @@ const vertexShader = `
         float depthOffset = -15.0 * (1.0 - sinkMask);
 
         float waveMask = smoothstep(140.0, 300.0, dist);
-        float waveStrength = mix(0.0, 1.0, waveMask); 
+        float waveStrength = mix(0.0, 1.0, waveMask);
 
+        // Noise Berechnung (teuer) bleibt im Vertex Shader (billig, da weniger Vertices als Pixel)
         float elevation = sin(pos.x * 0.02 + uTime * 0.5) * sin(pos.y * 0.02 + uTime * 0.4) * 1.5;
         elevation += snoise(vec2(pos.x * 0.03 + uTime * 0.3, pos.y * 0.03 + uTime * 0.2)) * 1.5;
-        
+
         elevation *= waveStrength;
         pos.z += elevation + depthOffset;
 
@@ -76,39 +76,51 @@ const fragmentShader = `
     uniform vec3 uColorShallow;
     uniform vec3 uColorFoam;
     uniform vec3 uSunDirection;
-    
+
     varying float vElevation;
     varying vec3 vPosition;
     varying float vDist;
-    ${noiseFunction}
 
     void main() {
+        // 1. Low Poly Look (Erhält die kristalline Optik)
         vec3 fNormal = normalize(cross(dFdx(vPosition), dFdy(vPosition)));
         vec3 lightDir = normalize(uSunDirection);
-        
         float light = max(dot(fNormal, lightDir), 0.0);
-        float shadow = mix(0.6, 1.0, light); 
+        float shadow = mix(0.6, 1.0, light);
 
-        float lagoonFactor = 1.0 - smoothstep(140.0, 300.0, vDist);
-        vec3 col = mix(uColorDeep, uColorShallow, lagoonFactor * 0.95);
+        // 2. Wasserfarbe
+        float lagoonFactor = 1.0 - smoothstep(130.0, 300.0, vDist);
+        vec3 col = mix(uColorDeep, uColorShallow, lagoonFactor);
 
-        float distortion = snoise(vec2(vPosition.x * 0.04, vPosition.y * 0.04 + uTime * 0.1));
-        float disturbedDist = vDist + (distortion * 12.0);
-        
-        float wavePattern = sin(disturbedDist * 0.2 + uTime * 2.5);
-        float foamNoise = snoise(vec2(vPosition.x * 0.08 + uTime, vPosition.y * 0.08));
-        wavePattern -= (foamNoise * 0.6); 
+        // 3. BRANDUNG (Der performante Trick)
+        // Statt Noise nutzen wir billige Sinus-Verzerrung basierend auf der Position (vPosition.x/z).
+        // Das bricht die perfekte Kreisform auf.
+        float distortion = sin(vPosition.x * 0.1 + uTime) * 2.0 + cos(vPosition.y * 0.1 + uTime) * 2.0;
 
-        float surfZone = smoothstep(130.0, 140.0, vDist) * (1.0 - smoothstep(160.0, 180.0, vDist));
-        float isSurf = step(0.9, wavePattern) * surfZone;
+        // Wir addieren die Verzerrung zur Distanz
+        float dist = vDist + distortion;
 
-        float highlight = smoothstep(0.9, 1.0, light);
-        
-        col = mix(col, uColorFoam, highlight * 0.3);
-        col = mix(col, uColorFoam, isSurf);
-        col *= shadow;
+        // Wandernde Ringe (Sinus über Zeit) - zur Insel hin (+ statt -)
+        float waveCycle = sin(dist * 0.5 + uTime * 2.5);
 
-        gl_FragColor = vec4(col, 0.95); 
+        // Harte Kanten für den Comic-Look (step Funktion ist extrem billig)
+        float foamLines = step(0.4, waveCycle);
+
+        // Maskierung: Schaum nur in Strandnähe (Radius 120 bis 160)
+        // Wir subtrahieren vElevation, damit der Schaum mit den Wellen "schwappt"
+        float shoreMask = smoothstep(120.0, 130.0, dist - vElevation * 2.0) * (1.0 - smoothstep(150.0, 160.0, dist));
+
+        float isSurf = foamLines * shoreMask;
+
+        // 4. Glanzlichter
+        float highlight = smoothstep(0.95, 1.0, light);
+
+        // Zusammenfügen
+        col = mix(col, uColorFoam, highlight * 0.3); // Glanz
+        col = mix(col, uColorFoam, isSurf);          // Schaum
+        col *= shadow;                               // Schatten
+
+        gl_FragColor = vec4(col, 0.95);
     }
 `;
 
@@ -145,8 +157,8 @@ export class Water {
     }
 
     init() {
-        // OPTIMIERUNG: Segmente von 128 auf 64 reduziert
-        const geometry = new THREE.PlaneGeometry(1000, 1000, 64, 64);
+        // OPTIMIERUNG: 96 Segmente für bessere Brandungs-Darstellung (Kompromiss Performance/Optik)
+        const geometry = new THREE.PlaneGeometry(1000, 1000, 96, 96);
 
         this.material = new THREE.ShaderMaterial({
             vertexShader: vertexShader,
@@ -159,7 +171,11 @@ export class Water {
                 uSunDirection: { value: new THREE.Vector3(1, 1, 1) }
             },
             transparent: true,
-            side: THREE.DoubleSide
+            side: THREE.DoubleSide,
+            flatShading: true, // WICHTIG für den Look
+            extensions: {
+                derivatives: true // WICHTIG für dFdx/dFdy
+            }
         });
 
         if (sceneSetup && sceneSetup.sunDirection) {

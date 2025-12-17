@@ -13,6 +13,7 @@ class SceneSetup {
         this.sunDirection = new THREE.Vector3();
         
         this.interactableObjects = [];
+        this.shadowUpdateFrame = 0;
     }
 
     init() {
@@ -33,18 +34,21 @@ class SceneSetup {
         this.camera.lookAt(0, 10, 0);
 
         this.renderer = new THREE.WebGLRenderer({
-            antialias: true, // OPTIMIERUNG: Bei Ruckeln auf alten iPads auf false setzen
-            alpha: false, // Changed to false to show background color
-            powerPreference: "high-performance"
+            antialias: false, // PERFORMANCE: AA aus für massive FPS-Gewinne auf Tablets
+            alpha: false,
+            powerPreference: "high-performance",
+            stencil: false, // PERFORMANCE: Stencil Buffer deaktivieren wenn nicht benötigt
+            depth: true
         });
         
-        // OPTIMIERUNG: PixelRatio auf max 1.5 begrenzen für Tablets
-        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+        // PERFORMANCE: Retina-Displays rendern wir nur mit Pixelratio 1 für Tablets/Mobile.
+        this.renderer.setPixelRatio(1.0);
         this.renderer.setSize(window.innerWidth, window.innerHeight);
 
         this.renderer.shadowMap.enabled = true;
         // OPTIMIERUNG: BasicShadowMap statt PCFSoftShadowMap für bessere Performance
         this.renderer.shadowMap.type = THREE.BasicShadowMap;
+        this.renderer.shadowMap.autoUpdate = false;
 
         if (container) {
             container.innerHTML = '';
@@ -66,9 +70,9 @@ class SceneSetup {
         this.dirLight.position.set(-150, 200, 100);
         this.dirLight.castShadow = true;
 
-        // OPTIMIERUNG: Shadow Map auf 1024 reduziert für Tablets (war 2048)
-        this.dirLight.shadow.mapSize.width = 1024;
-        this.dirLight.shadow.mapSize.height = 1024;
+        // OPTIMIERUNG: Shadow Map auf 512 reduziert für Tablets (war 1024)
+        this.dirLight.shadow.mapSize.width = 512;
+        this.dirLight.shadow.mapSize.height = 512;
         this.dirLight.shadow.camera.near = 0.5;
         this.dirLight.shadow.camera.far = 1000;
         
@@ -90,9 +94,15 @@ class SceneSetup {
     registerInteractable(object3D) {
         if (!object3D) return;
 
-        if (object3D.userData && object3D.userData.isInteractable) {
-            this.interactableObjects.push(object3D);
-        }
+        // Traverse: Suche rekursiv nach Objekten mit dem Flag isInteractable
+        object3D.traverse((child) => {
+            if (child.userData && child.userData.isInteractable) {
+                // Vermeide Duplikate
+                if (!this.interactableObjects.includes(child)) {
+                    this.interactableObjects.push(child);
+                }
+            }
+        });
     }
 
     unregisterInteractable(object3D) {
@@ -126,6 +136,10 @@ class SceneSetup {
         if (this.renderer && this.scene && this.camera) {
             // PERFORMANCE-HINWEIS: Frustum Culling ist automatisch aktiviert
             // THREE.js rendert nur Objekte, die im Kamera-Sichtfeld sind
+            if (this.renderer.shadowMap && this.renderer.shadowMap.autoUpdate === false) {
+                this.shadowUpdateFrame = (this.shadowUpdateFrame + 1) % 2;
+                this.renderer.shadowMap.needsUpdate = this.shadowUpdateFrame === 0;
+            }
             this.renderer.render(this.scene, this.camera);
         }
     }

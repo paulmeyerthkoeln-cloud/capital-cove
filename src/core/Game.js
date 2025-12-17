@@ -10,6 +10,7 @@ import { ui } from '../ui/UIManager.js';
 import { Water } from '../world/Water.js';
 import { Island } from '../world/Island.js';
 import { Environment } from '../world/Environment.js';
+import { SeaCreatureManager } from '../world/SeaCreatures.js';
 import { BuildingManager } from '../entities/Buildings.js';
 import { BoatManager } from '../entities/Boat.js';
 import { PersonManager } from '../entities/Person.js'; 
@@ -27,12 +28,13 @@ class Game {
 
         // OPTIMIERUNG: FPS-Limiter für sehr alte Tablets (standardmäßig deaktiviert)
         // Setze z.B. auf 30 um auf 30 FPS zu limitieren: this.fpsLimit = 30
-        this.fpsLimit = null; // null = unbegrenzt
+        this.fpsLimit = 30; // Stabilisiert Performance auf Schultablets
         this.frameMinMs = this.fpsLimit ? 1000 / this.fpsLimit : 0;
 
         this.water = null;
         this.island = null;
         this.environment = null;
+        this.seaCreatures = null;
         this.buildings = null;
         this.boatManager = null;
         this.personManager = null;
@@ -52,6 +54,9 @@ class Game {
 
         this.environment = new Environment();
         this.environment.init(this.buildings);
+
+        this.seaCreatures = new SeaCreatureManager();
+        this.seaCreatures.init();
 
         this.boatManager = new BoatManager();
         this.boatManager.init(); 
@@ -95,10 +100,8 @@ class Game {
 
         const deltaMs = nowMs - this.lastFrameTimeMs;
 
-        // OPTIMIERUNG: FPS-Limiter - Frame überspringen wenn zu früh
-        if (this.fpsLimit && deltaMs < this.frameMinMs) {
-            return; // Frame überspringen
-        }
+        // FPS-Limiter entfernt - verursachte Ruckeln durch Frame-Skipping
+        // (Die Render-Loop läuft jetzt ohne künstliche Limitierung)
 
         this.lastFrameTimeMs = nowMs;
 
@@ -109,10 +112,11 @@ class Game {
             this.tickAccumulatorMs -= this.tickLengthMs;
         }
 
-        const deltaSec = (deltaMs / 1000) * this.speedMultiplier;
+        const deltaSecUnscaled = deltaMs / 1000;
+        const deltaSec = deltaSecUnscaled * this.speedMultiplier;
         const totalTime = nowMs / 1000;
 
-        this.updateVisuals(deltaSec, totalTime);
+        this.updateVisuals(deltaSec, totalTime, deltaSecUnscaled);
         sceneSetup.render();
     }
 
@@ -128,15 +132,16 @@ class Game {
         });
     }
 
-    updateVisuals(deltaSec, totalTime) {
+    updateVisuals(deltaSec, totalTime, deltaSecUnscaled) {
         if (this.water) this.water.update(totalTime);
         if (this.environment) this.environment.update(deltaSec);
         if (this.buildings) this.buildings.update(deltaSec);
-        
+        if (this.seaCreatures) this.seaCreatures.update(deltaSec);
+
         if (this.boatManager) this.boatManager.update(deltaSec, totalTime);
         if (this.personManager) this.personManager.update(deltaSec, totalTime);
-        
-        input.update(); 
+
+        input.update(deltaSecUnscaled);
     }
 
     handleObjectClick(obj) {

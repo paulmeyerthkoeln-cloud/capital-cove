@@ -8,7 +8,6 @@ class Input {
 
         this.enabled = true;
         this.locked = false;
-        this.lastTime = performance.now();
 
         this.targetRadius = 400;
         this.currentRadius = 400;
@@ -23,8 +22,8 @@ class Input {
         this.minHeight = 50;
         this.maxHeight = 500;
 
-        this.dampingFactor = 5.0;
-        this.rotateSpeed = 0.004;
+        this.dampingFactor = 2.0; // Reduziert für weicheres Gefühl (Butter-Effekt)
+        this.rotateSpeed = 0.003;
         this.zoomSpeed = 0.5;
         this.panSpeed = 0.5;
 
@@ -197,7 +196,10 @@ class Input {
         // Nur auf Canvas erlauben
         if (!this.isEventOnCanvas(event)) return;
 
-        event.preventDefault();
+        // Nur preventDefault für Canvas, nicht für UI-Elemente
+        if (event.target.tagName === 'CANVAS') {
+            event.preventDefault();
+        }
 
         const touches = event.changedTouches;
 
@@ -235,7 +237,10 @@ class Input {
     onTouchMove(event) {
         if (!this.enabled || this.locked) return;
 
-        event.preventDefault();
+        // Nur preventDefault für Canvas
+        if (event.target.tagName === 'CANVAS') {
+            event.preventDefault();
+        }
 
         const touches = event.changedTouches;
 
@@ -295,7 +300,10 @@ class Input {
             return;
         }
 
-        event.preventDefault();
+        // Nur preventDefault für Canvas
+        if (event.target.tagName === 'CANVAS') {
+            event.preventDefault();
+        }
 
         const touches = event.changedTouches;
 
@@ -340,24 +348,34 @@ class Input {
         }
     }
 
-    update() {
+    update(dt) {
         if (!sceneSetup.camera) return;
 
-        const now = performance.now();
-        const dt = Math.min((now - this.lastTime) / 1000, 0.1); 
-        this.lastTime = now;
-        
-        const lerpFactor = this.dampingFactor * dt;
+        // FIX: dt begrenzen ("Clamp"). 
+        // Verhindert Kamerasprünge bei kurzen Lags (Garbage Collection).
+        // Wir nehmen maximal 0.05s (20 FPS) an, alles darüber wird ignoriert.
+        const safeDt = Math.min(dt || 0.016, 0.05);
 
-        // Kürzesten Weg für Rotation wählen (Winkel normalisieren)
+        // Exponentielle Glättung (Butterweich)
+        const dampFactor = 1 - Math.exp(-this.dampingFactor * safeDt);
+
+        // 1. Winkel interpolieren
         let angleDiff = this.targetAngle - this.currentAngle;
         while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
         while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
-        this.currentAngle += angleDiff * lerpFactor;
-        this.currentHeight += (this.targetHeight - this.currentHeight) * lerpFactor;
-        this.currentRadius += (this.targetRadius - this.currentRadius) * lerpFactor;
-        this.currentLook.lerp(this.targetLook, lerpFactor);
+        
+        this.currentAngle += angleDiff * dampFactor;
 
+        // 2. Höhe und Radius interpolieren
+        this.currentHeight += (this.targetHeight - this.currentHeight) * dampFactor;
+        this.currentRadius += (this.targetRadius - this.currentRadius) * dampFactor;
+
+        // 3. Look-Target interpolieren (etwas schneller als die Position für besseren Fokus)
+        // Wir nutzen hier einen eigenen Damping-Faktor (etwas straffer), damit das Ziel nicht "schwimmt"
+        const lookDamp = 1 - Math.exp(-this.dampingFactor * 1.5 * safeDt);
+        this.currentLook.lerp(this.targetLook, lookDamp);
+
+        // 4. Position berechnen
         const x = this.currentRadius * Math.sin(this.currentAngle);
         const z = this.currentRadius * Math.cos(this.currentAngle);
 

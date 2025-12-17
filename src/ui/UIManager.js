@@ -872,6 +872,7 @@ export class UIManager {
         let titleText = 'DER WIRTSCHAFTSKREISLAUF';
         if (this.cycleMode === 'STAGNATION') titleText = 'DIAGNOSE: DIE SPAR-SPIRALE';
         if (this.cycleMode === 'LEAKAGE') titleText = 'DIAGNOSE: KAPITALABFLUSS';
+        if (this.cycleMode === 'BOOM_BUST') titleText = 'DIAGNOSE: DER WACHSTUMS-ZWANG';
         
         const content = document.createElement('div');
         content.className = `cycle-paper ${this.isCycleBroken ? 'broken' : ''}`;
@@ -1020,6 +1021,130 @@ export class UIManager {
         if (this.cycleStep < 0) this.cycleStep = 0;
         // Beim Zurückgehen keine Animationen abspielen, nur harten Reset
         this.renderCycleState(this.cycleStep, true); 
+    }
+
+    // --- NEUE LOGIK FÜR KAPITEL 3 (BOOM & BUST) ---
+
+    renderBoomBustCycleState(step) {
+        const titleEl = document.getElementById('cycle-step-title');
+        const descEl = document.getElementById('cycle-step-desc');
+        const btnNext = document.getElementById('btn-cycle-next');
+        const btnBack = document.getElementById('btn-cycle-back');
+        const dots = document.querySelector('.step-dots');
+
+        // Reset Helper
+        const resetVisuals = () => {
+            document.querySelectorAll('.arrow-path').forEach(el => {
+                el.classList.remove('visible', 'active', 'crossed');
+                el.style.display = '';
+            });
+            document.querySelectorAll('.cycle-node').forEach(el => el.classList.remove('crisis'));
+            document.querySelectorAll('.worker-ghost').forEach(el => el.remove());
+            document.querySelectorAll('.bank-drain-badge').forEach(el => el.remove());
+        };
+
+        const showArrow = (id, style = 'active') => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.classList.add('visible', style);
+                el.style.display = 'block';
+            }
+        };
+
+        const spawnWorkers = (nodeId) => {
+            const node = document.getElementById(nodeId);
+            const container = document.getElementById('cycle-diagram-area');
+            if (!node || !container) return;
+
+            // Position relativ zum Container finden
+            const rect = node.getBoundingClientRect();
+            const contRect = container.getBoundingClientRect();
+            const left = (rect.left - contRect.left) + 80; // Rechts neben Node
+            const top = (rect.top - contRect.top) + 20;
+
+            for(let i=0; i<3; i++) {
+                const ghost = document.createElement('div');
+                ghost.className = 'worker-ghost';
+                ghost.textContent = '👷';
+                ghost.style.left = (left + i*15) + 'px';
+                ghost.style.top = top + 'px';
+                ghost.style.animationDelay = (i * 0.5) + 's';
+                container.appendChild(ghost);
+            }
+        };
+
+        const addBankDrain = () => {
+            const playerNode = document.getElementById('node-player');
+            if (playerNode) {
+                const badge = document.createElement('div');
+                badge.className = 'bank-drain-badge';
+                badge.innerHTML = "BANK<br>-TILGUNG";
+                playerNode.appendChild(badge);
+            }
+        };
+
+        resetVisuals();
+        if(btnBack) btnBack.disabled = (step === 0);
+
+        if (btnNext) {
+            btnNext.textContent = "Weiter";
+            btnNext.onclick = () => this.nextCycleStep();
+            btnNext.className = "btn-cycle";
+        }
+
+        // --- SCHRITT-LOGIK ---
+
+        if (step === 0) {
+            titleEl.textContent = "Schritt 1: Der Boom";
+            descEl.innerHTML = "Für den Bau deines Motorboots hat Kian Arbeiter eingestellt.<br><b>Ihre Löhne flossen in die Taverne und haben die Wirtschaft beflügelt.</b>";
+            if(dots) dots.textContent = "● ○ ○ ○";
+
+            // Visuell: Spieler zahlt Kian, Kian zahlt Mo
+            showArrow('path-p-k', 'active');
+            showArrow('path-k-m', 'active'); // Kian -> Mo (Löhne/Konsum)
+        }
+        else if (step === 1) {
+            titleEl.textContent = "Schritt 2: Das Loch";
+            descEl.innerHTML = "Jetzt ist das Boot fertig. Du fischst nur noch, aber du baust nichts Neues.<br><b>Die Auftragsbücher der Werft sind leer.</b>";
+            if(dots) dots.textContent = "○ ● ○ ○";
+
+            // Visuell: Kein Pfeil vom Spieler zu Kian!
+            // Nur Geldabfluss zur Bank
+            addBankDrain();
+            document.getElementById('node-kian').classList.add('crisis'); // Kian rot
+        }
+        else if (step === 2) {
+            titleEl.textContent = "Schritt 3: Der Bust";
+            descEl.innerHTML = "Ohne Folgeaufträge muss Kian die Arbeiter entlassen.<br><b>Diese Arbeitslosen sind nun keine Gäste mehr bei Mo. Der Konsum bricht weg.</b>";
+            if(dots) dots.textContent = "○ ○ ● ○";
+
+            addBankDrain();
+            document.getElementById('node-kian').classList.add('crisis');
+            document.getElementById('node-mo').classList.add('crisis'); // Mo auch betroffen
+
+            // Kian -> Mo durchgekreuzt
+            showArrow('path-k-m', 'crossed');
+
+            // Geister-Arbeiter
+            spawnWorkers('node-kian');
+        }
+        else if (step === 3) {
+            titleEl.textContent = "DIAGNOSE: WACHSTUMS-ZWANG";
+            descEl.innerHTML = "Ein System, das auf Wachstum basiert, darf nicht stillstehen.<br><b>Du musst sofort wieder investieren – auch wenn das neue Schulden bedeutet.</b>";
+            if(dots) dots.textContent = "○ ○ ○ ●";
+
+            addBankDrain();
+            document.getElementById('node-player').classList.add('crisis');
+
+            // Alle Pfeile weg oder broken
+            showArrow('path-k-m', 'crossed');
+
+            if (btnNext) {
+                btnNext.textContent = "Verstanden";
+                btnNext.classList.add('finish');
+                btnNext.onclick = () => this.hideCycleExplanation();
+            }
+        }
     }
 
     // --- NEUE LOGIK FÜR KAPITEL 1 (BROKEN CYCLE) ---
@@ -1349,7 +1474,13 @@ export class UIManager {
     }
 
     renderCycleState(step, skipAnimation = false) {
-        // WEICHE: Wenn Broken Cycle, nutze die neue Logik
+        // WEICHE: Spezial-Modus Boom & Bust (Kapitel 3->4)
+        if (this.cycleMode === 'BOOM_BUST') {
+            this.renderBoomBustCycleState(step);
+            return;
+        }
+
+        // WEICHE: Wenn Broken Cycle (Kapitel 1 / Legacy), nutze die Broken Logik
         if (this.isCycleBroken) {
             this.renderBrokenCycleState(step);
             return;
@@ -1943,7 +2074,7 @@ export class UIManager {
             shipyardOptions.forEach(option => {
                 const description = option.description ? option.description : '';
                 content.choices.push({
-                    text: `${option.label} (${option.cost}g)`,
+                    text: `${option.label}`,
                     description: option.available ? description : `${description} (Nicht genug Gold!)`,
                     action: () => handleShipyardOption(option)
                 });
@@ -2310,21 +2441,27 @@ export class UIManager {
             if (isLoss) coin.classList.add('loss');
 
             document.body.appendChild(coin);
-            
-            coin.style.left = startX + 'px';
-            coin.style.top = startY + 'px';
+
+            // FIX: Positioniere das Element direkt an den Startkoordinaten
+            // Damit ist (0,0) im Transform relativ zu diesem Punkt
+            coin.style.left = `${startX}px`;
+            coin.style.top = `${startY}px`;
 
             const delay = i * 60;
             const duration = 1000 + Math.random() * 300;
-            
-            const midX = startX + (endX - startX) * 0.5 + (Math.random()-0.5) * 80;
-            const arcOffset = isLoss ? 50 : -100; 
-            const midY = Math.min(startY, endY) + arcOffset + (Math.random() - 0.5) * 40;
+
+            // Berechne relative Distanzen für die Animation
+            const relEndX = endX - startX;
+            const relEndY = endY - startY;
+            const relMidX = relEndX * 0.5 + (Math.random()-0.5) * 80;
+            const arcOffset = isLoss ? 50 : -100;
+            const relMidY = (relEndY * 0.5) + arcOffset + (Math.random() - 0.5) * 40;
 
             const anim = coin.animate([
-                { transform: 'translate(0,0) scale(0.5)', opacity: 0 },
-                { transform: `translate(${midX - startX}px, ${midY - startY}px) scale(1.0)`, opacity: 1, offset: 0.5 },
-                { transform: `translate(${endX - startX}px, ${endY - startY}px) scale(0.6)`, opacity: 0 }
+                // Zentriere die Münze mit translate(-50%, -50%) und starte bei 0 Offset
+                { transform: 'translate(-50%, -50%) translate(0px, 0px) scale(0.5)', opacity: 0 },
+                { transform: `translate(-50%, -50%) translate(${relMidX}px, ${relMidY}px) scale(1.0)`, opacity: 1, offset: 0.5 },
+                { transform: `translate(-50%, -50%) translate(${relEndX}px, ${relEndY}px) scale(0.6)`, opacity: 0 }
             ], { duration, delay, easing: 'ease-in-out' });
 
             anim.onfinish = () => coin.remove();
@@ -2390,8 +2527,10 @@ export class UIManager {
                     el.style.display = 'none';
                 } else {
                     el.style.display = 'block';
-                    el.style.left = `${x}px`;
-                    el.style.top = `${y}px`;
+                    // OPTIMIERUNG: GPU-beschleunigte Positionierung mit translate3d
+                    el.style.left = '0px';
+                    el.style.top = '0px';
+                    el.style.transform = `translate3d(${x}px, ${y}px, 0)`;
                 }
             }
 
@@ -2720,8 +2859,10 @@ export class UIManager {
         const el = document.createElement('div');
         el.className = className;
         el.textContent = text;
-        el.style.left = `${x}px`;
-        el.style.top = `${y}px`;
+        // OPTIMIERUNG: GPU-beschleunigte Positionierung mit translate3d
+        el.style.left = '0px';
+        el.style.top = '0px';
+        el.style.transform = `translate3d(${x}px, ${y}px, 0)`;
         el.style.color = color;
 
         this.elements.uiLayer.appendChild(el);
@@ -3017,7 +3158,7 @@ export class UIManager {
 
             let frameId;
             const startTime = Date.now();
-            const duration = 3200;
+            const duration = 5000; // Länger anzeigen für bessere Lesbarkeit
 
             const cleanup = () => {
                 if (!el.parentNode) {
