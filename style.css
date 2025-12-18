@@ -3118,3 +3118,149 @@ button, .btn, .btn-action, .menu-btn, #dialog-close-btn,
     stroke-dasharray: 5, 5;
     opacity: 0.5;
 }
+
+/* --- BOOM/BUST VISUALS UPGRADE --- */
+
+/* Schritt 1: Der Gold-Rausch */
+.arrow-path.gold-pulse {
+    stroke: #ffd700 !important;
+    stroke-width: 8px;
+    stroke-dasharray: 15, 5;
+    animation: flowPulse 0.8s linear infinite;
+    filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.8));
+    opacity: 1;
+}
+
+@keyframes flowPulse {
+    0% { stroke-dashoffset: 20; }
+    100% { stroke-dashoffset: 0; }
+}
+
+/* Schritt 2: Der Saugnapf (Bank Abfluss) */
+.bank-vacuum {
+    position: absolute;
+    top: -40px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 2rem;
+    z-index: 100;
+    animation: suckMotion 0.2s infinite;
+}
+.bank-vacuum::after {
+    content: '🌪️'; /* Tornado/Sog Symbol */
+}
+
+@keyframes suckMotion {
+    0% { transform: translateX(-50%) rotate(0deg) scale(1); }
+    50% { transform: translateX(-50%) rotate(5deg) scale(1.1); }
+    100% { transform: translateX(-50%) rotate(0deg) scale(1); }
+}
+
+/* Der vertrocknende Pfeil */
+.arrow-path.withered {
+    stroke: #95a5a6 !important;
+    stroke-width: 1px !important;
+    stroke-dasharray: 2, 8;
+    opacity: 0.4;
+    transition: all 1s ease;
+}
+
+/* Schritt 3: Der Riss */
+.arrow-path.cracked {
+    stroke: #c0392b !important;
+    stroke-dasharray: 10, 5;
+    stroke-width: 3px;
+    animation: crackShake 0.2s infinite;
+}
+
+@keyframes crackShake {
+    0% { transform: translate(0, 0); }
+    25% { transform: translate(1px, 1px); }
+    50% { transform: translate(-1px, 0); }
+    75% { transform: translate(0, -1px); }
+    100% { transform: translate(0, 0); }
+}
+
+/* Abwandernde Arbeiter */
+.worker-ghost.walking {
+    animation: walkAway 3s forwards linear;
+    font-size: 1.2rem;
+    opacity: 1;
+}
+
+@keyframes walkAway {
+    0% { opacity: 1; transform: translate(0, 0); }
+    80% { opacity: 0.8; transform: translate(120px, -20px); }
+    100% { opacity: 0; transform: translate(150px, -30px); }
+}
+
+/* Schritt 4: Der System-Tod (Graustufen) */
+.system-desaturated {
+    filter: grayscale(1) contrast(1.2);
+    transition: filter 1.5s ease;
+}
+
+/* Sterling/Bank bleibt farbig im grauen System */
+.node-player.crisis {
+    /* Spieler Node im Zentrum der Krise rot behalten trotz Grayscale */
+    filter: none !important;
+}
+
+/* --- BOOM/BUST SPECIFIC STYLES --- */
+
+/* Der Sterling Knoten (erscheint nur bei Rückzahlung) */
+.node-sterling {
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    background: #2c3e50;
+    border: 3px solid #f1c40f; /* Goldener Rand */
+    border-radius: 50%;
+    z-index: 15;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+    /* Positioniert rechts oben vom Spieler */
+    top: 20px;
+    left: 320px;
+    display: none; /* Initial versteckt */
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.node-sterling.visible {
+    display: flex;
+}
+
+/* Rückzahlungs-Pfad (Geschwungen vom Spieler zu Sterling) */
+.drain-path {
+    fill: none;
+    stroke: #c0392b;
+    stroke-width: 4px;
+    stroke-dasharray: 10, 5;
+    marker-end: url(#arrowhead-red);
+    opacity: 0;
+    transition: opacity 0.5s;
+}
+
+.drain-path.visible {
+    opacity: 1;
+    animation: flowPulse 1s linear infinite;
+}
+
+/* Aktive Geldfluss-Pfeile (Dünner, wie in Fenster 1) */
+.arrow-path.flow {
+    stroke: #2c3e50;
+    stroke-width: 3px; /* Reduziert von 5px */
+    opacity: 1;
+    transition: all 0.5s ease;
+}
+
+/* Graue / Inaktive Pfeile */
+.arrow-path.faded {
+    stroke: #bdc3c7 !important;
+    stroke-width: 2px !important;
+    stroke-dasharray: 4, 4; /* Feiner gestrichelt */
+    opacity: 0.4;
+    transition: all 1s ease;
+}

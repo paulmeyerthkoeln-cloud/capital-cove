@@ -812,13 +812,13 @@ export class UIManager {
         return `M ${Math.round(start.x)} ${Math.round(start.y)} Q ${Math.round(cx)} ${Math.round(cy)} ${Math.round(end.x)} ${Math.round(end.y)}`;
     }
 
-    // NEW: Helper to generate the SVG path data for an oval connection
+    // Helper für geschwungene Verbindungen (Kapitel 1 & 3 Leakage)
     generateOvalPath(start, end, invert = false) {
-        // --- KONFIGURATION (Angepasst) ---
-        const nodeRadius = 45;   // Kleiner: 45px (entspricht 90px Durchmesser im CSS)
-        const spread = 18;       // Wölbung etwas enger passend zu kleineren Nodes
-        const headBuffer = 4;    // Kleinerer Buffer: Pfeil geht näher an den Kreis ran (Länger)
-        const arcFactor = 1.1;   
+        // --- KONFIGURATION ---
+        const nodeRadius = 45;   // Radius der Kreise (90px / 2)
+        const spread = 15;       // Wie weit der Bogen seitlich ausbricht
+        const headBuffer = 8;    // Abstand zum Ziel (für Pfeilspitze)
+        const arcFactor = 1.2;   // Wölbungsgrad (höher = runder)   
 
         // 1. Vektor Berechnung
         const dx = end.x - start.x;
@@ -828,28 +828,28 @@ export class UIManager {
         const ux = dx / dist;
         const uy = dy / dist;
         
-        // 2. Normale
+        // 2. Normale für seitlichen Versatz
         let nx = -uy;
         let ny = ux;
 
-        // WENN invertiert: Normale umdrehen (andere Seite)
+        // Invertieren für die andere Seite (z.B. Rückfluss)
         if (invert) {
             nx = -nx;
             ny = -ny;
         }
 
-        // 3. Startpunkt (Radius + Spread nach außen)
+        // 3. Startpunkt (Am Rand des Kreises + seitlicher Spread)
         const startX = start.x + (ux * nodeRadius) + (nx * spread);
         const startY = start.y + (uy * nodeRadius) + (ny * spread);
 
-        // 4. Endpunkt (Näher am Ziel durch kleinen headBuffer)
+        // 4. Endpunkt (Am Zielkreis ankommen)
         const endX = end.x - (ux * (nodeRadius + headBuffer)) + (nx * spread);
         const endY = end.y - (uy * (nodeRadius + headBuffer)) + (ny * spread);
 
-        // 5. Bogen
+        // 5. Bogen-Radius berechnen
         const arcRadius = dist * arcFactor;
 
-        // WENN invertiert: Sweep-Flag von 0 auf 1 ändern, damit der Bogen nach außen wölbt
+        // Sweep-Flag bestimmt die Bogenrichtung (0 oder 1)
         const sweep = invert ? 1 : 0;
 
         return `M ${Math.round(startX)} ${Math.round(startY)} A ${Math.round(arcRadius)} ${Math.round(arcRadius)} 0 0 ${sweep} ${Math.round(endX)} ${Math.round(endY)}`;
@@ -887,11 +887,14 @@ export class UIManager {
         const C_KIAN   = { x: 312, y: 250 };
 
         // --- PFADE GENERIEREN ---
-        // Im gesunden Kreislauf: gerade Linien, sonst geschwungene
+        // Im gesunden Kreislauf UND Boom/Bust: gerade Linien
         let pathPM, pathMP, pathPK, pathKP, pathMK, pathKM;
 
-        if (this.cycleMode === 'HEALTHY') {
-            // Gerade Linien für den gesunden Kreislauf
+        // Sterling Position (Rechts oben)
+        const C_STERLING = { x: 320, y: 60 };
+
+        if (this.cycleMode === 'HEALTHY' || this.cycleMode === 'BOOM_BUST') {
+            // Gerade Linien
             pathPM = `M ${C_PLAYER.x} ${C_PLAYER.y} L ${C_MO.x} ${C_MO.y}`;
             pathMP = `M ${C_MO.x} ${C_MO.y} L ${C_PLAYER.x} ${C_PLAYER.y}`;
             pathPK = `M ${C_PLAYER.x} ${C_PLAYER.y} L ${C_KIAN.x} ${C_KIAN.y}`;
@@ -899,14 +902,17 @@ export class UIManager {
             pathMK = `M ${C_MO.x} ${C_MO.y} L ${C_KIAN.x} ${C_KIAN.y}`;
             pathKM = `M ${C_KIAN.x} ${C_KIAN.y} L ${C_MO.x} ${C_MO.y}`;
         } else {
-            // Geschwungene Linien für broken/stagnation/leakage
+            // Geschwungene Linien für andere Modi
             pathPM = this.generateOvalPath(C_PLAYER, C_MO);
             pathMP = this.generateOvalPath(C_MO, C_PLAYER);
             pathPK = this.generateOvalPath(C_PLAYER, C_KIAN, true);
             pathKP = this.generateOvalPath(C_KIAN, C_PLAYER, true);
             pathMK = this.generateOvalPath(C_MO, C_KIAN);
             pathKM = this.generateOvalPath(C_KIAN, C_MO);
-        } 
+        }
+
+        // Pfad für Rückzahlung (Bogen nach oben)
+        const pathDrain = `M ${C_PLAYER.x + 40} ${C_PLAYER.y} Q 280 20 ${C_STERLING.x} ${C_STERLING.y}`;
 
         // Text auf dem Pfeil je nach Modus
         let labelText = "GELDFLUSS";
@@ -915,7 +921,7 @@ export class UIManager {
 
         content.innerHTML = `
             <div class="cycle-title">${titleText}</div>
-            
+
             <div class="cycle-diagram" id="cycle-diagram-area">
                 <svg class="cycle-lines-svg" viewBox="0 0 400 320">
                     <defs>
@@ -926,7 +932,8 @@ export class UIManager {
                             <path d="M0,0 L6,3 L0,6 L1.5,3 Z" fill="#c0392b" />
                         </marker>
                     </defs>
-                    
+
+                    <!-- Bestehende Pfade -->
                     <path id="path-p-m" d="${pathPM}" class="arrow-path simple" />
                     <text class="arrow-label" dy="-4">
                         <textPath href="#path-p-m" startOffset="50%" text-anchor="middle">${labelText}</textPath>
@@ -957,6 +964,9 @@ export class UIManager {
                         <textPath href="#path-k-p" startOffset="50%" text-anchor="middle">${labelText}</textPath>
                     </text>
 
+                    <!-- NEU: Rückzahlungs Pfad -->
+                    <path id="path-drain" d="${pathDrain}" class="drain-path" />
+
                     <!-- Legacy IDs für Animationen im 'Gesunden' Zyklus -->
                     <path id="path-inc-mo" d="${pathMP}" class="arrow-path simple" style="display:none" />
                     <path id="path-inc-kian" d="${pathKP}" class="arrow-path simple" style="display:none" />
@@ -966,6 +976,7 @@ export class UIManager {
 
                 </svg>
 
+                <!-- Nodes -->
                 <div id="node-player" class="cycle-node node-player">
                     <div class="node-portrait" style="background-image: url('${imgPlayer}')"></div>
                     <div class="node-label">Kapitän</div>
@@ -982,6 +993,12 @@ export class UIManager {
                     <div class="node-portrait" style="background-image: url('${imgKian}')"></div>
                     <div class="node-label">Kian</div>
                     <div id="wallet-kian" class="node-wallet ${this.cycleMode === 'HEALTHY' ? 'visible' : ''}">100</div>
+                </div>
+
+                <!-- NEU: Sterling Node -->
+                <div id="node-sterling" class="node-sterling">
+                    <div class="node-portrait" style="background-image: url('assets/portraits/sterling.png')"></div>
+                    <div class="node-label" style="background:#2c3e50; color:#f1c40f;">Bank</div>
                 </div>
             </div>
 
@@ -1005,8 +1022,7 @@ export class UIManager {
 
         this.renderCycleState(0);
 
-        // Initial-Update der Wallets mit aktuellen Wirtschaftswerten
-        this.updateCycleWallets();
+        // ENTFERNT: this.updateCycleWallets(); damit die Startwerte (100) nicht überschrieben werden.
     }
 
     nextCycleStep() {
@@ -1031,113 +1047,127 @@ export class UIManager {
         const btnNext = document.getElementById('btn-cycle-next');
         const btnBack = document.getElementById('btn-cycle-back');
         const dots = document.querySelector('.step-dots');
+        const sterlingNode = document.getElementById('node-sterling');
+        const drainPath = document.getElementById('path-drain');
 
-        // Reset Helper
-        const resetVisuals = () => {
-            document.querySelectorAll('.arrow-path').forEach(el => {
-                el.classList.remove('visible', 'active', 'crossed');
-                el.style.display = '';
-            });
-            document.querySelectorAll('.cycle-node').forEach(el => el.classList.remove('crisis'));
-            document.querySelectorAll('.worker-ghost').forEach(el => el.remove());
-            document.querySelectorAll('.bank-drain-badge').forEach(el => el.remove());
-        };
+        // 1. RESET: Alles auf Anfangszustand setzen (Wichtig für Zurück-Button)
+        document.querySelectorAll('.arrow-path').forEach(el => {
+            el.classList.remove('visible', 'active', 'faded', 'flow');
+            el.style.display = 'none'; // Standardmäßig aus
+        });
+        if (sterlingNode) sterlingNode.classList.remove('visible');
+        if (drainPath) drainPath.classList.remove('visible');
 
-        const showArrow = (id, style = 'active') => {
+        // Helper zum gezielten Einschalten
+        const setArrow = (id, type) => {
             const el = document.getElementById(id);
             if (el) {
-                el.classList.add('visible', style);
                 el.style.display = 'block';
+                el.classList.add('visible', type);
             }
         };
 
-        const spawnWorkers = (nodeId) => {
-            const node = document.getElementById(nodeId);
-            const container = document.getElementById('cycle-diagram-area');
-            if (!node || !container) return;
-
-            // Position relativ zum Container finden
-            const rect = node.getBoundingClientRect();
-            const contRect = container.getBoundingClientRect();
-            const left = (rect.left - contRect.left) + 80; // Rechts neben Node
-            const top = (rect.top - contRect.top) + 20;
-
-            for(let i=0; i<3; i++) {
-                const ghost = document.createElement('div');
-                ghost.className = 'worker-ghost';
-                ghost.textContent = '👷';
-                ghost.style.left = (left + i*15) + 'px';
-                ghost.style.top = top + 'px';
-                ghost.style.animationDelay = (i * 0.5) + 's';
-                container.appendChild(ghost);
+        const setSterlingVisible = (visible) => {
+            if (visible) {
+                if (sterlingNode) sterlingNode.classList.add('visible');
+                if (drainPath) drainPath.classList.add('visible');
+            } else {
+                if (sterlingNode) sterlingNode.classList.remove('visible');
+                if (drainPath) drainPath.classList.remove('visible');
             }
         };
 
-        const addBankDrain = () => {
-            const playerNode = document.getElementById('node-player');
-            if (playerNode) {
-                const badge = document.createElement('div');
-                badge.className = 'bank-drain-badge';
-                badge.innerHTML = "BANK<br>-TILGUNG";
-                playerNode.appendChild(badge);
-            }
-        };
-
-        resetVisuals();
-        if(btnBack) btnBack.disabled = (step === 0);
-
+        // Buttons
+        if (btnBack) btnBack.disabled = (step === 0);
         if (btnNext) {
             btnNext.textContent = "Weiter";
             btnNext.onclick = () => this.nextCycleStep();
+            btnNext.classList.remove('finish');
             btnNext.className = "btn-cycle";
         }
 
-        // --- SCHRITT-LOGIK ---
+        // --- SCHRITT DEFINITIONEN ---
 
         if (step === 0) {
+            // SCHRITT 1: Der Boom
             titleEl.textContent = "Schritt 1: Der Boom";
-            descEl.innerHTML = "Für den Bau deines Motorboots hat Kian Arbeiter eingestellt.<br><b>Ihre Löhne flossen in die Taverne und haben die Wirtschaft beflügelt.</b>";
+            descEl.innerHTML = "Dank des Kredits haben wir massiv investiert.<br><b>Das Geld belebte die Werft, dann die Taverne und floss schließlich zurück.</b>";
             if(dots) dots.textContent = "● ○ ○ ○";
 
-            // Visuell: Spieler zahlt Kian, Kian zahlt Mo
-            showArrow('path-p-k', 'active');
-            showArrow('path-k-m', 'active'); // Kian -> Mo (Löhne/Konsum)
+            // State: Alle Pfeile aktiv, Sterling weg
+            setSterlingVisible(false);
+            setArrow('path-p-k', 'flow');
+            setArrow('path-k-m', 'flow');
+            setArrow('path-m-p', 'flow');
+
+            this.setWallet('wallet-player', 200);
+            this.setWallet('wallet-kian', 100);
+            this.setWallet('wallet-mo', 100);
+
+            // Animation nur beim ersten Mal oder vorwärts
+            if (!this.isAnimating && !this.hasAnimatedStep0) {
+                this.hasAnimatedStep0 = true; // Flag um Wiederholung beim schnellen Klicken zu vermeiden
+                this.runSequence([
+                    () => this.animateTransfer('node-player', 'node-kian', 0, 'path-p-k'),
+                    () => this.animateTransfer('node-kian', 'node-mo', 0, 'path-k-m'),
+                    () => this.animateTransfer('node-mo', 'node-player', 0, 'path-m-p')
+                ]);
+            }
         }
         else if (step === 1) {
-            titleEl.textContent = "Schritt 2: Das Loch";
-            descEl.innerHTML = "Jetzt ist das Boot fertig. Du fischst nur noch, aber du baust nichts Neues.<br><b>Die Auftragsbücher der Werft sind leer.</b>";
+            // SCHRITT 2: Die Tilgung
+            titleEl.textContent = "Schritt 2: Die Tilgung";
+            descEl.innerHTML = "Sterling fordert sein Geld zurück.<br><b>Das Kapital verlässt den Kreislauf über die Bank.</b>";
             if(dots) dots.textContent = "○ ● ○ ○";
 
-            // Visuell: Kein Pfeil vom Spieler zu Kian!
-            // Nur Geldabfluss zur Bank
-            addBankDrain();
-            document.getElementById('node-kian').classList.add('crisis'); // Kian rot
+            // State: Alle Pfeile noch da, Sterling da
+            setSterlingVisible(true);
+            setArrow('path-p-k', 'flow');
+            setArrow('path-k-m', 'flow');
+            setArrow('path-m-p', 'flow');
+
+            this.setWallet('wallet-player', 20); // Geld weg
+            this.setWallet('wallet-kian', 100);
+            this.setWallet('wallet-mo', 100);
+
+            if (!this.isAnimating) {
+                // Animation zu Sterling
+                this.runSequence([
+                    () => this.animateTransfer('node-player', 'node-sterling', 0, 'path-drain')
+                ]);
+            }
         }
         else if (step === 2) {
-            titleEl.textContent = "Schritt 3: Der Bust";
-            descEl.innerHTML = "Ohne Folgeaufträge muss Kian die Arbeiter entlassen.<br><b>Diese Arbeitslosen sind nun keine Gäste mehr bei Mo. Der Konsum bricht weg.</b>";
+            // SCHRITT 3: Das Loch
+            titleEl.textContent = "Schritt 3: Fehlende Aufträge";
+            descEl.innerHTML = "Durch die Rückzahlung fehlt dir Geld für neue Aufträge.<br><b>Die Verbindung zur Werft trocknet aus.</b>";
             if(dots) dots.textContent = "○ ○ ● ○";
 
-            addBankDrain();
-            document.getElementById('node-kian').classList.add('crisis');
-            document.getElementById('node-mo').classList.add('crisis'); // Mo auch betroffen
+            // State: Sterling WEG, P->K grau
+            setSterlingVisible(false);
+            setArrow('path-p-k', 'faded'); // GRAU
+            setArrow('path-k-m', 'flow');
+            setArrow('path-m-p', 'flow');
 
-            // Kian -> Mo durchgekreuzt
-            showArrow('path-k-m', 'crossed');
-
-            // Geister-Arbeiter
-            spawnWorkers('node-kian');
+            this.setWallet('wallet-player', 20);
+            this.setWallet('wallet-kian', 50); // Sinkt
+            this.setWallet('wallet-mo', 80);
         }
         else if (step === 3) {
-            titleEl.textContent = "DIAGNOSE: WACHSTUMS-ZWANG";
-            descEl.innerHTML = "Ein System, das auf Wachstum basiert, darf nicht stillstehen.<br><b>Du musst sofort wieder investieren – auch wenn das neue Schulden bedeutet.</b>";
+            // SCHRITT 4: Der Stillstand
+            titleEl.textContent = "Schritt 4: Der Stillstand";
+            descEl.innerHTML = "Die Arbeitslosigkeit trifft die Taverne. Die Liquidität fehlt überall.<br><b>Der gesamte Kreislauf bricht zusammen.</b>";
             if(dots) dots.textContent = "○ ○ ○ ●";
 
-            addBankDrain();
-            document.getElementById('node-player').classList.add('crisis');
+            // State: Sterling WEG, Alle Pfeile grau
+            setSterlingVisible(false); // Sterling verschwindet
+            setArrow('path-p-k', 'faded');
+            setArrow('path-k-m', 'faded');
+            setArrow('path-m-p', 'faded');
 
-            // Alle Pfeile weg oder broken
-            showArrow('path-k-m', 'crossed');
+            this.setWallet('wallet-player', 20);
+            this.setWallet('wallet-kian', 20);
+            this.setWallet('wallet-mo', 20);
 
             if (btnNext) {
                 btnNext.textContent = "Verstanden";
@@ -1156,24 +1186,18 @@ export class UIManager {
         const btnBack = document.getElementById('btn-cycle-back');
         const dots = document.querySelector('.step-dots');
 
-        // Reset UI Helper
-        const resetAllArrows = () => {
-            const svgs = document.querySelectorAll('.arrow-path, .arrow-label');
-            svgs.forEach(el => el.classList.remove('visible'));
-            document.querySelectorAll('.cycle-node').forEach(el => el.classList.remove('crisis'));
-            // Wallets NICHT mehr verstecken - sie bleiben sichtbar mit der .visible Klasse
-        };
-
+        // Helper: Pfeil sicher anzeigen (Fix für Display-Probleme)
         const showArrow = (id) => {
             const path = document.getElementById(id);
             if(path) {
-                path.classList.add('visible');
-                console.log(`[DEBUG] showArrow(${id}) - classList:`, path.classList.toString());
-            } else {
-                console.warn(`[DEBUG] showArrow(${id}) - Element not found!`);
+                path.style.display = 'block'; // Erzwingen!
+                // Kurze Verzögerung für CSS Transition
+                requestAnimationFrame(() => path.classList.add('visible'));
             }
+            // Label anzeigen falls vorhanden
             if(path && path.nextElementSibling && path.nextElementSibling.tagName === 'text') {
-                path.nextElementSibling.classList.add('visible');
+                path.nextElementSibling.style.display = 'block';
+                requestAnimationFrame(() => path.nextElementSibling.classList.add('visible'));
             }
         };
 
@@ -1182,26 +1206,46 @@ export class UIManager {
             if(node) node.classList.add('crisis');
         };
 
-        // UI Reset vor jedem Step
-        resetAllArrows();
+        const setWalletZero = (id) => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.textContent = "0";
+                el.className = "node-wallet visible deficit";
+            }
+        };
+
+        // UI Reset
+        document.querySelectorAll('.arrow-path, .arrow-label').forEach(el => {
+            el.classList.remove('visible', 'active');
+            el.style.display = 'none'; // Alles erst mal ausblenden
+        });
+        document.querySelectorAll('.cycle-node').forEach(el => el.classList.remove('crisis'));
+
         if(btnBack) btnBack.disabled = (step === 0);
         if(btnNext) {
             btnNext.textContent = "Weiter";
             btnNext.onclick = () => this.nextCycleStep();
-            btnNext.className = "btn-cycle"; 
+            btnNext.className = "btn-cycle";
         }
 
-        // =========================================================
-        // SZENARIO A: STAGNATION (Kapitel 1 - Sparmaßnahmen)
-        // =========================================================
+        // --- STAGNATION (Kapitel 1) ---
         if (this.cycleMode === 'STAGNATION') {
-            
-            // Config auslesen: Wer wurde bestraft?
-            let config = economy.state.savingsConfig || { tavernLevel: 'basic', shipyardLevel: 'basic' };
+            // FIX: Wir nutzen die echte Config, aber erzwingen 'basic' (Sparen), falls wir im Debug-Modus sind
+            // oder die Simulation noch nicht läuft (isSavingActive == false), damit die Pfeile sichtbar sind.
+            let config = economy.state.savingsConfig;
+
+            if (!config || !economy.state.isSavingActive) {
+                config = { tavernLevel: 'basic', shipyardLevel: 'basic' };
+            }
+
             const isSavingMo = (config.tavernLevel === 'basic');
             const isSavingKian = (config.shipyardLevel === 'basic');
             const bothSaved = isSavingMo && isSavingKian;
-            console.log('[DEBUG STAGNATION]', { step, config, isSavingMo, isSavingKian, bothSaved });
+
+            // Wallets Standard (werden bei Bedarf überschrieben)
+            this.setWallet('wallet-player', 100);
+            this.setWallet('wallet-mo', 100);
+            this.setWallet('wallet-kian', 100);
 
             if (step === 0) {
                 titleEl.textContent = "Ausgangslage";
@@ -1210,63 +1254,41 @@ export class UIManager {
             }
             else if (step === 1) {
                 titleEl.textContent = "Schritt 1: Deine Sparmaßnahmen";
+                descEl.innerHTML = "Du hast deine Ausgaben gekürzt.<br><b>Das Geld fließt nicht mehr zu deinen Nachbarn.</b>";
                 if(dots) dots.textContent = "○ ● ○ ○";
-                
-                if (isSavingMo) showArrow('path-p-m');
-                if (isSavingKian) showArrow('path-p-k');
 
-                if (bothSaved) {
-                    descEl.innerHTML = "Du hast bei <b>beiden</b> gespart.<br>Mo und Kian erhalten kein Einkommen von dir.";
-                } else if (isSavingMo) {
-                    descEl.innerHTML = "Du hast bei <b>Mo</b> gespart.<br>Mo erhält kein Geld von dir.";
-                } else {
-                    descEl.innerHTML = "Du hast bei <b>Kian</b> gespart.<br>Kian erhält kein Geld von dir.";
-                }
-
-                if(isSavingMo) impactNode('node-mo');
-                if(isSavingKian) impactNode('node-kian');
+                // Wir zeigen die Pfeile an, wo gespart wurde (als blockiert/rot visualisiert oder einfach fehlend?)
+                // Hier zeigen wir sie als "vorhanden aber inaktiv/rot" wäre gut, aber für jetzt nutzen wir den existierenden Stil
+                if (isSavingMo) { showArrow('path-p-m'); impactNode('node-mo'); this.setWallet('wallet-mo', 0); }
+                if (isSavingKian) { showArrow('path-p-k'); impactNode('node-kian'); this.setWallet('wallet-kian', 0); }
             }
             else if (step === 2) {
                 titleEl.textContent = "Schritt 2: Die Reaktion";
+                descEl.innerHTML = "Ohne Einnahmen können Mo und Kian auch nichts mehr kaufen.<br><b>Sie streichen ihre gegenseitigen Aufträge.</b>";
                 if(dots) dots.textContent = "○ ○ ● ○";
-
-                if (isSavingMo) showArrow('path-p-m');
-                if (isSavingKian) showArrow('path-p-k');
-                if (isSavingMo) showArrow('path-m-k');
-                if (isSavingKian) showArrow('path-k-m');
-
-                if (bothSaved) {
-                    descEl.innerHTML = "Da beide kein Geld haben, streichen sie ihre Aufträge beim Nachbarn.<br><b>Der Binnenmarkt bricht zusammen.</b>";
-                } else if (isSavingMo) {
-                    descEl.innerHTML = "Weil Mo kein Geld bekam, storniert er seinen Auftrag bei Kian.<br><b>Kian verliert Einnahmen, obwohl du ihn bezahlt hast!</b>";
-                } else {
-                    descEl.innerHTML = "Weil Kian kein Geld bekam, geht er nicht mehr bei Mo essen.<br><b>Mo verliert Einnahmen, obwohl du ihn bezahlt hast!</b>";
-                }
-
-                impactNode('node-mo');
-                impactNode('node-kian');
-            }
-            else if (step === 3) {
-                titleEl.textContent = "Schritt 3: Der Bumerang";
-                if(dots) dots.textContent = "○ ○ ○ ●";
 
                 if (isSavingMo) { showArrow('path-p-m'); showArrow('path-m-k'); }
                 if (isSavingKian) { showArrow('path-p-k'); showArrow('path-k-m'); }
 
-                if (bothSaved) {
-                    showArrow('path-m-p'); showArrow('path-k-p');
-                    descEl.innerHTML = "Weil beide weniger Geld haben, sparen sie auch bei dir.<br><b>Alle verlieren an Einnahmen.</b>";
-                } else if (isSavingMo) {
-                    showArrow('path-k-p');
-                    descEl.innerHTML = "Da Kian den Auftrag von Mo verloren hat, fehlt ihm Geld.<br><b>Er kann dich nicht mehr bezahlen.</b>";
-                } else {
-                    showArrow('path-m-p');
-                    descEl.innerHTML = "Da Mo den Umsatz von Kian verloren hat, fehlt ihm Geld.<br><b>Er kann dich nicht mehr bezahlen.</b>";
-                }
+                impactNode('node-mo');
+                impactNode('node-kian');
+                if (isSavingMo) this.setWallet('wallet-mo', 0);
+                if (isSavingKian) this.setWallet('wallet-kian', 0);
+            }
+            else if (step === 3) {
+                titleEl.textContent = "Schritt 3: Der Bumerang";
+                descEl.innerHTML = "Weil niemand Geld hat, kauft auch keiner deinen Fisch.<br><b>Deine Einnahmen brechen weg.</b>";
+                if(dots) dots.textContent = "○ ○ ○ ●";
+
+                if (isSavingMo) { showArrow('path-p-m'); showArrow('path-m-k'); showArrow('path-k-p'); }
+                if (isSavingKian) { showArrow('path-p-k'); showArrow('path-k-m'); showArrow('path-m-p'); }
 
                 impactNode('node-player');
                 impactNode('node-mo');
                 impactNode('node-kian');
+                this.setWallet('wallet-player', 0);
+                this.setWallet('wallet-mo', 0);
+                this.setWallet('wallet-kian', 0);
 
                 if (btnNext) {
                     btnNext.textContent = "Verstanden";
@@ -1276,75 +1298,47 @@ export class UIManager {
             }
         }
 
-        // =========================================================
-        // SZENARIO B: LEAKAGE (Kapitel 3 - Kapitalabfluss)
-        // =========================================================
+        // --- LEAKAGE (Kapitel 3 Ende) ---
         else if (this.cycleMode === 'LEAKAGE') {
-            
-            // Visualisierung: Player Wallet leer, Nachbarn leer
             if (step === 0) {
                 titleEl.textContent = "Der Preis der Schuldenfreiheit";
-                descEl.innerHTML = "Du hast den Kredit getilgt. Das fühlt sich gut an, aber...<br><b>Das Geld (Kapital) hat die Insel verlassen.</b>";
+                descEl.innerHTML = "Du hast den Kredit getilgt.<br><b>Das Geld hat die Insel verlassen.</b>";
                 if(dots) dots.textContent = "● ○ ○ ○";
-                
-                // Player Wallet rot/leer anzeigen
-                this.setWallet('wallet-player', 0);
-                document.getElementById('wallet-player').classList.remove('hidden');
-                document.getElementById('wallet-player').classList.add('deficit');
+                setWalletZero('wallet-player');
+                this.setWallet('wallet-mo', 50);
+                this.setWallet('wallet-kian', 50);
             }
             else if (step === 1) {
                 titleEl.textContent = "Schritt 1: Leere Kassen";
-                descEl.innerHTML = "Du hast kein Betriebskapital mehr. <br>Du konntest Mo und Kian nur teilweise oder gar nicht bezahlen.";
+                descEl.innerHTML = "Du hast kein Geld mehr für Löhne oder Essen.<br>Die Pfeile zu Mo und Kian bleiben leer.";
                 if(dots) dots.textContent = "○ ● ○ ○";
 
-                // Pfeile vom Spieler zu den Nachbarn (gestrichelt/rot in broken style)
                 showArrow('path-p-m');
                 showArrow('path-p-k');
-                
-                this.setWallet('wallet-player', 0);
-                document.getElementById('wallet-player').classList.remove('hidden');
-                document.getElementById('wallet-player').classList.add('deficit');
+                setWalletZero('wallet-player');
             }
             else if (step === 2) {
                 titleEl.textContent = "Schritt 2: Markteinbruch";
-                descEl.innerHTML = "Weil Mo und Kian kein Geld von dir bekommen haben,<br>können sie sich gegenseitig nichts abkaufen.";
+                descEl.innerHTML = "Ohne dein Geld können Mo und Kian auch nicht handeln.<br>Der Binnenmarkt kommt zum Erliegen.";
                 if(dots) dots.textContent = "○ ○ ● ○";
 
-                showArrow('path-p-m');
-                showArrow('path-p-k');
-                showArrow('path-m-k'); // Mo kauft nichts bei Kian
-                showArrow('path-k-m'); // Kian kauft nichts bei Mo
+                showArrow('path-p-m'); showArrow('path-p-k');
+                showArrow('path-m-k'); showArrow('path-k-m');
 
-                impactNode('node-mo');
-                impactNode('node-kian');
-                
-                // Alle Wallets auf 0
-                this.setWallet('wallet-player', 0);
-                this.setWallet('wallet-mo', 0);
-                this.setWallet('wallet-kian', 0);
-                document.querySelectorAll('.node-wallet').forEach(el => {
-                    el.classList.remove('hidden');
-                    el.classList.add('deficit');
-                });
+                impactNode('node-mo'); impactNode('node-kian');
+                setWalletZero('wallet-player');
+                setWalletZero('wallet-mo');
+                setWalletZero('wallet-kian');
             }
             else if (step === 3) {
                 titleEl.textContent = "Schritt 3: Der Stillstand";
-                // Expliziter Hinweis auf den Abfluss zur Bank
-                descEl.innerHTML = "Das Geld ist nicht weg. Es ist bei der Bank.<br><b>Dem Insel-Kreislauf fehlt nun das Tauschmittel.</b><br>Ohne Moos nichts los.";
+                descEl.innerHTML = "Das Geld liegt bei der Bank. Uns fehlt das Tauschmittel.<br><b>Ohne Moos nix los.</b>";
                 if(dots) dots.textContent = "○ ○ ○ ●";
 
-                // Zeige, dass Geld rausging, aber NICHTS zurückkommt
-                showArrow('path-p-m');
-                showArrow('path-p-k');
-                // Keine Rückflüsse (m-p, k-p bleiben unsichtbar)
+                showArrow('path-p-m'); showArrow('path-p-k');
 
-                // Impact auf alle Nodes
-                impactNode('node-player');
-                impactNode('node-mo');
-                impactNode('node-kian');
-
-                // Player Wallet bleibt leer/rot
-                this.setWallet('wallet-player', 0);
+                impactNode('node-player'); impactNode('node-mo'); impactNode('node-kian');
+                setWalletZero('wallet-player'); setWalletZero('wallet-mo'); setWalletZero('wallet-kian');
 
                 if (btnNext) {
                     btnNext.textContent = "Verstanden";

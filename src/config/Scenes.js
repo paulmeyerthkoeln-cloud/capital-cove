@@ -502,7 +502,7 @@ export const SCENE_DATA = {
     'D4_TO_D5_TRANSITION': {
         type: 'narrative',
         title: 'Rechnung geht nicht auf',
-        text: 'Das Motorboot bringt 30 Gold Gewinn, ich ziehe 50 Gold Zinsen ab. Sie verbrennen 20 Gold pro Fahrt. Sie tilgen so nie. Sie brauchen das größere Boot. Sofort.',
+        text: 'Das Motorboot bringt 30 Gold Gewinn, ich ziehe 50 Gold Zinsen ab. Sie machen nur 20 Gold Gewinn pro Fahrt. Sie tilgen so nie. Sie brauchen das größere Boot. Sofort.',
         speakerLeft: "Kapt'n",
         speakerRight: 'Sterling',
         focus: 'right',
